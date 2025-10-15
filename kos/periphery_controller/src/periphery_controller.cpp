@@ -42,6 +42,8 @@ void buzz() {
     }
     setBuzzer(false);
     buzzerEnabled = false;
+    if (!publishMessage("api/events", "type=buzzer&event=OFF"))
+        logEntry("Failed to publish event message", ENTITY_NAME, LogLevel::LOG_WARNING);
 }
 
 int startBuzzer() {
@@ -50,7 +52,7 @@ int startBuzzer() {
     if (buzzerThread.joinable())
         buzzerThread.join();
     buzzerThread = std::thread(buzz);
-    if (!publishMessage("api/events", "type=buzzer&event=Buzzer is enabled"))
+    if (!publishMessage("api/events", "type=buzzer&event=ON"))
         logEntry("Failed to publish event message", ENTITY_NAME, LogLevel::LOG_WARNING);
     return 1;
 }

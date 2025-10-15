@@ -108,16 +108,16 @@ void listenAutopilot() {
             char message[256] = {0};
             switch (data[0]) {
             case 1:
-                snprintf(message, 256, "type=info_firmare&event=%s", data + 1);
+                snprintf(message, 256, "type=info_firmware&event=%s", data + 1);
                 break;
             case 2:
                 snprintf(message, 256, "type=info_obstacle&event=%s", data + 1);
                 break;
             case 3:
-                snprintf(message, 256, "type=arm&event=%s", data + 1);
+                snprintf(message, 256, "type=arm_state&event=%s", data + 1);
                 break;
             case 4:
-                snprintf(message, 256, "type=disarm&event=%s", data + 1);
+                snprintf(message, 256, "type=mission_mode&event=%s", data + 1);
                 break;
             case 5:
                 snprintf(message, 256, "type=mission_command&event=%s", data + 1);

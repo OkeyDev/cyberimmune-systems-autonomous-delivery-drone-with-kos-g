@@ -229,7 +229,7 @@ int readRfid(char* tag) {
 
 int setKillSwitch(bool enable) {
     if (enable) {
-        if (!publishMessage("api/events", "type=kill_switch&event=Kill-switch is enabled"))
+        if (!publishMessage("api/events", "type=kill_switch&event=OFF"))
             logEntry("Failed to publish event message", ENTITY_NAME, LogLevel::LOG_WARNING);
         if (!setPin(pinKillSwitchFirst, false) || !setPin(pinKillSwitchSecond, true))
             return 0;
@@ -239,7 +239,7 @@ int setKillSwitch(bool enable) {
         }
     }
     else {
-        if (!publishMessage("api/events", "type=kill_switch&event=Kill-switch is disabled"))
+        if (!publishMessage("api/events", "type=kill_switch&event=ON"))
             logEntry("Failed to publish event message", ENTITY_NAME, LogLevel::LOG_WARNING);
         if (!setPin(pinKillSwitchFirst, false) || !setPin(pinKillSwitchSecond, false))
             return 0;
@@ -251,7 +251,7 @@ int setKillSwitch(bool enable) {
 }
 
 int setCargoLock(bool enable) {
-    if (!publishMessage("api/events", enable ? "type=cargo_lock&event=Cargo lock is enabled" : "type=kill_switch&event=Cargo lock is disabled"))
+    if (!publishMessage("api/events", enable ? "type=cargo_lock&event=OFF" : "type=kill_switch&event=ON"))
         logEntry("Failed to publish event message", ENTITY_NAME, LogLevel::LOG_WARNING);
     return setPin(pinCargoLock, enable);
 }
