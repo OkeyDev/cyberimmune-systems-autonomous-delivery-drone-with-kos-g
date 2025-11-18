@@ -48,9 +48,9 @@ topic readwrite api/nmission/response/inspector
 topic readwrite api/nmission/request/inspector
 topic readwrite api/arm/response/inspector
 topic readwrite api/arm/request/inspector
-topic readwrite api/dm/deliverer/send/+
+topic readwrite api/dm/+/send/inspector
 topic readwrite api/rfid/inspector
-topic read api/dm/deliverer/recv/+
+topic read api/dm/+/recv/inspector
 topic read api/rfid/response/inspector
 topic read api/forbidden_zones
 
@@ -65,9 +65,9 @@ topic readwrite api/nmission/response/deliverer
 topic readwrite api/nmission/request/deliverer
 topic readwrite api/arm/response/deliverer
 topic readwrite api/arm/request/deliverer
-topic readwrite api/dm/inspector/send/+
+topic readwrite api/dm/+/send/deliverer
 topic readwrite api/rfid/deliverer
-topic read api/dm/inspector/recv/+
+topic read api/dm/+/recv/deliverer
 topic read api/rfid/response/deliverer
 topic read api/forbidden_zones
 

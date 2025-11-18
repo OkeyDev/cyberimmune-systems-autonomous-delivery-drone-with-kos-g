@@ -22,7 +22,7 @@
 
 /** \cond */
 #define SIM_PERIPHERY_MESSAGE_HEAD_SIZE 4
-#define RFID_TAG_NUM 10
+#define RFID_TAG_NUM 3
 
 static const uint8_t SimPeripheryMessageHead[SIM_PERIPHERY_MESSAGE_HEAD_SIZE] = { 0x06, 0x66, 0xbe, 0xa7 };
 /** \endcond */

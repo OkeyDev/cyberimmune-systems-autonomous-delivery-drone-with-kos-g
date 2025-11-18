@@ -275,7 +275,7 @@ int main(void) {
         sleep(RETRY_DELAY_SEC);
     }
 
-    //Here should be the logic for the inspector message processing
+    //Here should be the logic for the inspector message processing (it is in subscriptionBuffer)
     //An actual content starts after "message=" and ends with "#"
     //Mission will not be received from the server; instead it should be generated here
     //and approved by the server with 'askForMissionApproval' function

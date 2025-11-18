@@ -1,8 +1,10 @@
 package drone_controller.PeripheryControllerInterface
 
+const UInt16 MaxTagLength = 36;
+
 interface {
     EnableBuzzer(out UInt8 success);
     SetKillSwitch(in UInt8 enable, out UInt8 success);
     SetCargoLock(in UInt8 enable, out UInt8 success);
-    ScanRfid(out UInt8 tagFound, out UInt8 success);
+    ScanRfid(out string<MaxTagLength> tag, out UInt8 success);
 }

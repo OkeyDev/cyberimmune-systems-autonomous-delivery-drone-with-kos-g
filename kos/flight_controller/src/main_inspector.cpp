@@ -348,15 +348,17 @@ int main(void) {
 
     /* RFID Check */
     //Scan RFID tag with 'scanRfid' function
-    //Calculate a signature for message "tag=%s", rfid
-    //Send message "tag=%s&sig=0x%s", tag, signature to the topic "api/rfid"
+    //Calculate a signature for message "tag=%s", rfid with 'signMessage'
+    //Send message "tag=%s&sig=0x%s", tag, signature to the topic "api/rfid" with 'publishMessage'
     //Receive the response from the topic "api/rfid/response/"
+    //Signature of the received message can be checked with 'checkSignature'
     //If the response contains "$TRUE#" than the tag is cargo destination, and "$FALSE#" otherwise
 
     /* Send message to deliverer */
     //Calculate a signature for message "message=%s", message_text
     //Message content is not specified and can be in any form
     //Send message "message=%s&sig=0x%s", message, signature to the topic "api/dm/%s/send", receiver_id = deliverer
+    //with 'publishMessage'
 
     while (true)
         sleep(1000);

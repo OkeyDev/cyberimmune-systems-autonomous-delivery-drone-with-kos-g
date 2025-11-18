@@ -34,7 +34,16 @@ nk_err_t SetCargoLockImpl(struct PeripheryControllerInterface *self,
 nk_err_t ScanRfidImpl(struct PeripheryControllerInterface *self,
                     const PeripheryControllerInterface_ScanRfid_req *req, const struct nk_arena *reqArena,
                     PeripheryControllerInterface_ScanRfid_res *res, struct nk_arena *resArena) {
-    res->success = readRfid(res->tagFound);
+    char tag[36] = {0};
+    res->success = readRfid(tag);
+    uint8_t len = strlen(tag);
+
+    nk_char_t *msg = nk_arena_alloc(nk_char_t, resArena, &(res->tag), len + 1);
+    if (msg == NULL)
+        return NK_EBADMSG;
+    else if (len > PeripheryControllerInterface_MaxTagLength)
+        return NK_ENOMEM;
+    strncpy(msg, tag, len);
 
     return NK_EOK;
 }

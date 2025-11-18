@@ -58,7 +58,7 @@ int setCargoLock(uint8_t enable) {
     return ((PeripheryControllerInterface_SetCargoLock(&proxy.base, &req, NULL, &res, NULL) == rcOk) && res.success);
 }
 
-int scanRfid(uint8_t &scanResult) {
+int scanRfid(char* tag) {
     NkKosTransport transport;
     nk_iid_t riid;
     initSenderInterface("periphery_controller_connection", "drone_controller.PeripheryController.interface", transport, riid);
@@ -68,11 +68,18 @@ int scanRfid(uint8_t &scanResult) {
 
     PeripheryControllerInterface_ScanRfid_req req;
     PeripheryControllerInterface_ScanRfid_res res;
+    char resBuffer[PeripheryControllerInterface_ScanRfid_res_arena_size];
+    struct nk_arena resArena = NK_ARENA_INITIALIZER(resBuffer, resBuffer + sizeof(resBuffer));
+    nk_arena_reset(&resArena);
 
-    if ((PeripheryControllerInterface_ScanRfid(&proxy.base, &req, NULL, &res, NULL) != rcOk) || !res.success)
+    if ((PeripheryControllerInterface_ScanRfid(&proxy.base, &req, NULL, &res, &resArena) != rcOk) || !res.success)
         return 0;
 
-    scanResult = res.tagFound;
+    nk_uint32_t len = 0;
+    nk_char_t *msg = nk_arena_get(nk_char_t, &resArena, &(res.tag), &len);
+    if ((msg == NULL) || (len > PeripheryControllerInterface_ScanRfid_res_arena_size))
+        return 0;
+    strncpy(tag, msg, len);
 
     return 1;
 }

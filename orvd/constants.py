@@ -50,7 +50,7 @@ class MQTTTopic:
     ARM_REQUEST = 'api/arm/request/{id}'
     EVENTS = 'api/events/{id}'
     RFID = 'api/rfid/{id}'
-    DM_SEND = 'api/dm/{send_id}/send/{recv_id}'
+    DM_SEND = 'api/dm/{recv_id}/send/{send_id}'
     
     # sendable
     PING = 'ping/{id}'
@@ -61,7 +61,7 @@ class MQTTTopic:
     FMISSION_KOS = 'api/fmission_kos/{id}'
     AUTH = 'api/auth/{id}'
     CONNECTION_STATUS = 'api/connection_status'
-    DM_RECV = 'api/dm/{recv_id}/recv/{send_id}'
+    DM_RECV = 'api/dm/{send_id}/recv/{recv_id}'
     RFID_RESPONSE = 'api/rfid/response/{id}'
     
 class APIRoute:
