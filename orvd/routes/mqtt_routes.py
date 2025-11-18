@@ -9,6 +9,7 @@ from handlers.api_handlers import (
     telemetry_handler, arm_handler, save_logs_handler, revise_mission_handler,
     save_events_handler
 )
+from handlers.mqtt_handlers import rfid_handler
 
 def extract_id_from_kwargs(kwargs):
     id = kwargs.get('id')
@@ -100,6 +101,17 @@ def revise_mission(client, userdata, msg, **kwargs):
             mqtt.publish_message(MQTTTopic.NMISSION_RESPONSE.format(id=id), response[0])
     except Exception as e:
         print(f"Error handling mission message: {e}")
+        
+@mqtt.topic(MQTTTopic.RFID)
+def rfid(client, userdata, msg, **kwargs):
+    try:
+        query_string = msg.payload.decode()
+        query_params = parse_qs(query_string)
+        payload = {k: v[0] for k, v in query_params.items()}
+        payload['id'] = extract_id_from_kwargs(kwargs)
+        rfid_handler(**payload)
+    except Exception as e:
+        print(f"Error handling rfid message: {e}")
 
 @mqtt.topic(MQTTTopic.DM_SEND)
 def direct_message(client, userdata, msg, **kwargs):

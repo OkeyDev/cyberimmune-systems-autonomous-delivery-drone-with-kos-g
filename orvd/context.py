@@ -1,5 +1,6 @@
 import logging
 import os
+import json
 from dataclasses import dataclass, field
 
 @dataclass
@@ -21,6 +22,8 @@ class Context:
     change_forbidden_zones_A: dict = field(default_factory=dict)
     change_forbidden_zones_B: dict = field(default_factory=dict)
     change_forbidden_zones_C: dict = field(default_factory=dict)
+    rfid_sets: list = field(default_factory=list)
+    uav_rfid_map: dict = field(default_factory=dict)
 
     def __post_init__(self):
         def _get_coords(env_var):
@@ -47,5 +50,13 @@ class Context:
 
         if not self.change_forbidden_zones_C:
             self.change_forbidden_zones_C = _get_coords('CHANGE_FORBIDDEN_ZONES_C')
+
+        if not self.rfid_sets:
+            rfid_sets_str = os.getenv('RFID_SETS')
+            if rfid_sets_str:
+                try:
+                    self.rfid_sets = json.loads(rfid_sets_str)
+                except json.JSONDecodeError:
+                    logging.warning("Invalid JSON format for RFID_SETS.")
 
 context = Context()

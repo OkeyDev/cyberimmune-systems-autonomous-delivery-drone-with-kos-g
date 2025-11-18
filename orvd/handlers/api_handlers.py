@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 import time
+import random
 from context import context
 from extensions import task_scheduler_client as scheduler
 from constants import (
@@ -83,6 +84,9 @@ def auth_handler(id: str):
     mqtt_publish_forbidden_zones()
     mqtt_publish_auth(id)
     
+    if context.rfid_sets:
+        context.uav_rfid_map[id] = random.choice(context.rfid_sets)
+
     return f'$Auth id={id}'
 
 def arm_handler(id: str, **kwargs):

@@ -72,3 +72,22 @@ def mqtt_send_mission(id: str, *args, **kwargs):
 def mqtt_publish_connection_status(*args, **kwargs):
     message = str(context.flight_info_response)
     mqtt.publish_message(MQTTTopic.CONNECTION_STATUS, message)
+
+def rfid_handler(id: str, tag: str, **kwargs):
+    """
+    Обрабатывает RFID метку от БПЛА.
+
+    Args:
+        id (str): Идентификатор БПЛА.
+        tag (str): RFID метка.
+    """
+    assigned_set = context.uav_rfid_map.get(id)
+    response = '$FALSE'
+    
+    if assigned_set and tag in assigned_set:
+        response = '$TRUE'
+    
+    print(f'tag {tag} - response {response}')
+        
+    signed_response = f'{response}#{hex(sign(response, KeyGroup.ORVD))[2:]}'
+    mqtt.publish_message(MQTTTopic.RFID_RESPONSE.format(id=id), signed_response)

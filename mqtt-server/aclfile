@@ -16,6 +16,7 @@ topic readwrite api/nmission/request/+
 topic readwrite api/arm/response/+
 topic readwrite api/arm/request/+
 topic readwrite api/rfid/+
+topic readwrite api/rfid/response/+
 topic readwrite api/connection_status
 topic readwrite api/dm/+/send/+
 topic readwrite api/dm/+/recv/+
@@ -33,6 +34,7 @@ topic readwrite api/nmission/request/+
 topic readwrite api/arm/response/+
 topic readwrite api/arm/request/+
 topic readwrite api/rfid/+
+topic readwrite api/rfid/response/+
 topic readwrite api/connection_status
 
 user 52_58_00_12_34_bb
@@ -48,6 +50,8 @@ topic readwrite api/arm/response/52:58:00:12:34:bb
 topic readwrite api/arm/request/52:58:00:12:34:bb
 topic readwrite api/dm/52:58:00:12:34:bb/send/+
 topic read api/dm/52:58:00:12:34:bb/recv/+
+topic readwrite api/rfid/52:58:00:12:34:bb
+topic read api/rfid/response/52_58_00_12_34_bb
 topic read api/forbidden_zones
 
 # This affects all clients.
