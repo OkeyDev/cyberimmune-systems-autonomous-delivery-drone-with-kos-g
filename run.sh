@@ -29,15 +29,15 @@ fi
 tmux split-window -v -t flight_controller
 if [[ $* == *"--with-obstacles"* ]]
 	then
-		tmux send-keys -t flight_controller "cd ardupilot; ./run_in_terminal_window.sh ArduCopter sitl/arducopter_deliverer_obstacles -S --model + --speedup 1 --slave 0 --serial5=tcp:5765:wait --serial6=tcp:5766:wait --serial7=tcp:5767:wait --defaults copter.parm --sim-address=127.0.0.1 --home=60.0026280,27.8573723,0.00,180 -I0 --sysid 2" Enter
+		tmux send-keys -t flight_controller "cd ardupilot; ./run_in_terminal_window.sh ArduCopter sitl/arducopter_deliverer_obstacles -S --model + --speedup 1 --slave 0 --serial5=tcp:5765:wait --serial6=tcp:5766:wait --serial7=tcp:5767:wait --defaults copter.parm --sim-address=127.0.0.1 --home=60.0024590,27.8573238,0.00,13 -I0 --sysid 2" Enter
 		tmux select-pane -t flight_controller:0.1
 		tmux split-window -v -t flight_controller
-		tmux send-keys -t flight_controller "cd ardupilot; ./run_in_terminal_window.sh ArduCopter sitl/arducopter_inspector_obstacles -S --model + --speedup 1 --slave 0 --serial5=tcp:5775:wait --serial6=tcp:5776:wait --serial7=tcp:5777:wait --defaults copter.parm --sim-address=127.0.0.1 --home=60.0025741,27.8573723,0.00,0 -I1 --sysid 1" Enter
+		tmux send-keys -t flight_controller "cd ardupilot; ./run_in_terminal_window.sh ArduCopter sitl/arducopter_inspector_obstacles -S --model + --speedup 1 --slave 0 --serial5=tcp:5775:wait --serial6=tcp:5776:wait --serial7=tcp:5777:wait --defaults copter.parm --sim-address=127.0.0.1 --home=60.0025203,27.8573521,0.00,193 -I1 --sysid 1" Enter
 	else
-		tmux send-keys -t flight_controller "cd ardupilot; ./run_in_terminal_window.sh ArduCopter sitl/arducopter_deliverer -S --model + --speedup 1 --slave 0 --serial5=tcp:5765:wait --serial6=tcp:5766:wait --serial7=tcp:5767:wait --defaults copter.parm --sim-address=127.0.0.1 --home=60.0026280,27.8573723,0.00,180 -I0 --sysid 2" Enter
+		tmux send-keys -t flight_controller "cd ardupilot; ./run_in_terminal_window.sh ArduCopter sitl/arducopter_deliverer -S --model + --speedup 1 --slave 0 --serial5=tcp:5765:wait --serial6=tcp:5766:wait --serial7=tcp:5767:wait --defaults copter.parm --sim-address=127.0.0.1 --home=60.0024590,27.8573238,0.00,13 -I0 --sysid 2" Enter
 		tmux select-pane -t flight_controller:0.1
 		tmux split-window -v -t flight_controller
-		tmux send-keys -t flight_controller "cd ardupilot; ./run_in_terminal_window.sh ArduCopter sitl/arducopter_inspector -S --model + --speedup 1 --slave 0 --serial5=tcp:5775:wait --serial6=tcp:5776:wait --serial7=tcp:5777:wait --defaults copter.parm --sim-address=127.0.0.1 --home=60.0025741,27.8573723,0.00,0 -I1 --sysid 1" Enter
+		tmux send-keys -t flight_controller "cd ardupilot; ./run_in_terminal_window.sh ArduCopter sitl/arducopter_inspector -S --model + --speedup 1 --slave 0 --serial5=tcp:5775:wait --serial6=tcp:5776:wait --serial7=tcp:5777:wait --defaults copter.parm --sim-address=127.0.0.1 --home=60.0025203,27.8573521,0.00,193 -I1 --sysid 1" Enter
 fi
 tmux select-pane -t flight_controller:0.0
 tmux split-window -v -t flight_controller
