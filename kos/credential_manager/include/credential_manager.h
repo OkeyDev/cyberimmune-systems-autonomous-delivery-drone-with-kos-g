@@ -62,6 +62,7 @@ int loadRsaKey(uint8_t* N, uint8_t* D, char* n, char* e, uint32_t nLen, uint32_t
  * \note Обмен ключами происходит при помощи запроса на сервер ОРВД через компонент ServerConnector.
  */
 int shareRsaKey();
+int getPartnerRsaKey();
 
 /**
  * \~English Attempts to read stored RSA key. If file "rsa" with key is found, sets the key parts

@@ -32,6 +32,9 @@ int main(void) {
     if (!shareRsaKey())
         return EXIT_FAILURE;
 
+    if (strcmp(PARTNER_ID, "NULL") && !getPartnerRsaKey())
+        return EXIT_FAILURE;
+
     logEntry("Initialization is finished", ENTITY_NAME, LogLevel::LOG_INFO);
 
     kosipc::Application app     =  kosipc::MakeApplicationAutodetect();

@@ -216,17 +216,17 @@ fi
 
 if [ "$SIMULATION" == "TRUE" ]; then
     if [ "$INSPECTOR_ROLE" == "TRUE" ]; then
-        if [ "BOARD_ID" == "" ]; then
+        if [ "$BOARD_ID" == "" ]; then
             BOARD_ID="inspector"
         fi
-        if [ "PARTNER_ID" == ""]; then
+        if [ "$PARTNER_ID" == "" ]; then
             PARTNER_ID="deliverer"
         fi
     else
-        if [ "BOARD_ID" == "" ]; then
+        if [ "$BOARD_ID" == "" ]; then
             BOARD_ID="deliverer"
         fi
-        if [ "PARTNER_ID" == ""]; then
+        if [ "$PARTNER_ID" == "" ]; then
             PARTNER_ID="inspector"
         fi
     fi

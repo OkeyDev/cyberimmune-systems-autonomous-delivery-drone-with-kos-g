@@ -150,18 +150,18 @@ int shareRsaKey() {
         logEntry("Failed to share RSA key. Trying again in 1s", ENTITY_NAME, LogLevel::LOG_WARNING);
         sleep(1);
     }
-    if (!setRsaKey(response, MessageSource::SERVER_ORVD))
-        return 0;
-    else if (strcmp(PARTNER_ID, "NULL")) {
-        snprintf(request, 1024, "/api/kos_key?target_id=%s", PARTNER_ID);
-        while (!sendRequest(request, response, 1024) || !strcmp(response, "TIMEOUT")) {
-            logEntry("Failed to get partner drone RSA key. Trying again in 1s", ENTITY_NAME, LogLevel::LOG_WARNING);
-            sleep(1);
-        }
-        return setRsaKey(response, MessageSource::PARTNER_DRONE);
+    return setRsaKey(response, MessageSource::SERVER_ORVD);
+}
+
+int getPartnerRsaKey() {
+    char request[1024] = {0};
+    char response[1024] = {0};
+    snprintf(request, 1024, "/api/kos_key?target_id=%s", PARTNER_ID);
+    while (!sendRequest(request, response, 1024) || !strcmp(response, "TIMEOUT") || !strcmp(response, "$Key: NOT_FOUND")) {
+        logEntry("Failed to get partner drone RSA key. Trying again in 1s", ENTITY_NAME, LogLevel::LOG_WARNING);
+        sleep(1);
     }
-    else
-        return 1;
+    return setRsaKey(response, MessageSource::PARTNER_DRONE);
 }
 
 int getMessageSignature(char* message, char* sign) {
