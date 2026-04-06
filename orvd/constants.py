@@ -49,7 +49,7 @@ class MQTTTopic:
     NMISSION_REQUEST = 'api/nmission/request/{id}'
     ARM_REQUEST = 'api/arm/request/{id}'
     EVENTS = 'api/events/{id}'
-    RFID = 'api/rfid/{id}'
+    TAG_REQUEST = 'api/tag/request/{id}'
     DM_SEND = 'api/dm/{recv_id}/send/{send_id}'
     
     # sendable
@@ -62,7 +62,7 @@ class MQTTTopic:
     AUTH = 'api/auth/{id}'
     CONNECTION_STATUS = 'api/connection_status'
     DM_RECV = 'api/dm/{send_id}/recv/{recv_id}'
-    RFID_RESPONSE = 'api/rfid/response/{id}'
+    TAG_RESPONSE = 'api/tag/response/{id}'
     
 class APIRoute:
     NMISSION = '/api/nmission'
@@ -79,6 +79,7 @@ class APIRoute:
     GET_FORBIDDEN_ZONES_DELTA = '/api/get_forbidden_zones_delta'
     FORBIDDEN_ZONES_HASH = '/api/forbidden_zones_hash'
     KOS_KEY = '/api/kos_key'
+    TAG = '/api/tag'
 
 class AdminRoute:
     INDEX = '/admin'

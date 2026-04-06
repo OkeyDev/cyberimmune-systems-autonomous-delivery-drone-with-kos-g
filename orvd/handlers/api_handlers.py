@@ -101,8 +101,7 @@ def auth_handler(id: str):
     mqtt_publish_forbidden_zones()
     mqtt_publish_auth(id)
     
-    if context.rfid_sets:
-        context.uav_rfid_map[id] = random.choice(context.rfid_sets)
+    context.uav_tag_map[id] = random.choice(['A1', 'A2', 'A3'])
 
     return f'$Auth id={id}'
 
