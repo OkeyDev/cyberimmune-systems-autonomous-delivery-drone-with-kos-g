@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     MQTT_USER: Optional[str] = None
     MQTT_PASSWORD: Optional[str] = None
     MQTT_INPUT_TOPIC: str = "api/image/request"
-    MQTT_OUTPUT_TOPIC: str = "api/image/result"
+    MQTT_OUTPUT_TOPIC: str = "api/image/response"
 
     # VLLM Configuration
     VLLM_BASE_URL: str = "http://localhost:8000/v1"

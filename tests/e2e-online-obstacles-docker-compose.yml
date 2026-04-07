@@ -78,6 +78,28 @@ services:
     ports:
       - "8080:8080"
 #################################################
+  recognizer:
+    image: recognizer
+    build:
+      context: ./recognizer
+      dockerfile: ./Dockerfile
+    container_name: recognizer
+    restart: always
+    environment:
+      MQTT_HOST: "172.28.0.5"
+      MQTT_PORT: "1883"
+      MQTT_USER: ${ORVD_MQTT_USERNAME}
+      MQTT_PASSWORD: ${ORVD_MQTT_PASSWORD}
+      MQTT_INPUT_TOPIC: "api/image/request"
+      MQTT_OUTPUT_TOPIC: "api/image/response"
+      RECOGNIZER_TYPE: "stub"
+      LOG_LEVEL: "INFO"
+    depends_on:
+      - mqtt-server
+    networks:
+      cyberimmune:
+        ipv4_address: 172.28.0.6
+#################################################
   mqtt-server:
     image: mqtt-server
     build:
