@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include (platform)
-initialize_platform (FORCE_STATIC NO_NEW_VERSION_CHECK)
+initialize_platform (FORCE_STATIC)
 if (PLATFORM_SUPPORTS_DYNAMIC_LINKING)
     message (FATAL_ERROR "The solution only supports static libraries")
 endif ()
