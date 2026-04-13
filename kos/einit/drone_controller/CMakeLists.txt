@@ -121,7 +121,7 @@ if (SERVER)
             VFS_NETWORK_BACKEND: client:kl.VfsNet"
             EXTRA_ARGS ${DHCPCD_ARGS})
         set_target_properties (precompiled_vfs::VfsNet PROPERTIES
-        DEPENDS_ON_ENTITY "${entropy_ENTITY};dnet_brcmfmac::server;${dnet_ENTITY}")
+        DEPENDS_ON_ENTITY "${entropy_ENTITY};dnet_brcm_fmac::executable;dnet_executables::whole;${dnet_ENTITY}")
         set_target_properties (${wpa_SUPPLICANT_ENTITY} PROPERTIES
             DEPENDS_ON_ENTITY ""
             EXTRA_CONNECTIONS "\
