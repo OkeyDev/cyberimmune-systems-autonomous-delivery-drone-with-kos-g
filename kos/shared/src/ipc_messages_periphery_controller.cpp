@@ -84,8 +84,8 @@ int takePicture(char* picture) {
         return 0;
     }
 
-    //TODO: make return code understandable
+    if (!success)
+        return 0;
     takenPicture.copy(picture, takenPicture.size() + 1);
-
-    return success;
+    return 1;
 }
