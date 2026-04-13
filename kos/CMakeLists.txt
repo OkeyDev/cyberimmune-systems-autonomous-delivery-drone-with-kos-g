@@ -40,7 +40,7 @@ if (NOT SIMULATION)
         find_package (wpa REQUIRED COMPONENTS SUPPLICANT_ENTITY)
         include_directories (${wpa_INCLUDE})
         find_package (dnet_executables REQUIRED)
-	    find_package (dnet_brcm_fmac REQUIRED)
+        find_package (dnet_brcm_fmac REQUIRED)
     endif ()
 endif ()
 
