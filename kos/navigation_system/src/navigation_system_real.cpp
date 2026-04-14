@@ -32,24 +32,20 @@
 
 #if ALT_SRC == 1
     std::thread barometerThread;
+
+    char barometerI2C[] = "i2c1";
+    I2cHandle barometerHandler = NULL;
 #endif
 
 #if COORD_SRC == 1
-    char bspUart[] = "uart3";
-    char gpsUart[] = "serial@7e201600";
+    char gpsUart[] = "uart3";
 #elif COORD_SRC == 2
 #define LATLON_TO_M 0.011131884502145034
-    char bspUart[] = "uart5";
-    char gpsUart[] = "serial@7e201a00";
+    char gpsUart[] = "uart5";
     float lnsSin, lnsCos, lnsScale;
     int32_t prevX, prevY;
 #endif
-char gpsConfigSuffix[] = "default";
 UartHandle gpsUartHandler = NULL;
-
-char barometerI2C[] = "i2c1";
-char barometerConfigSuffix[] = "p2-3";
-I2cHandle barometerHandler = NULL;
 
 int32_t tempCoefs[3];
 int32_t pressCoefs[9];
@@ -68,17 +64,19 @@ float temperatureFine;
  * \return Возвращает 1 при успешной записи, иначе -- 0.
  */
 int writeRegister(uint8_t reg, uint8_t val) {
+#if ALT_SRC == 1
     I2cMsg messages[1];
     uint8_t buf[2] = { reg, val };
 
     messages[0].addr = 0x76;
-    messages[0].flags = 0;
+    messages[0].flags = I2C_MASTER_WRITE;
     messages[0].buf = buf;
     messages[0].len = 2;
 
     Retcode rc = I2cXfer(barometerHandler, 400000, messages, 1);
     if (rc != rcOk)
         return 0;
+#endif
 
     return 1;
 }
@@ -94,12 +92,13 @@ int writeRegister(uint8_t reg, uint8_t val) {
  * \return Возвращает 1 при успешном чтении, иначе -- 0.
  */
 int readRegister16(uint8_t reg, uint8_t* val) {
+#if ALT_SRC == 1
     I2cMsg messages[2];
     uint8_t writeBuffer[1] = { reg };
     uint8_t readBuffer[2];
 
     messages[0].addr = 0x76;
-    messages[0].flags = 0;
+    messages[0].flags = I2C_MASTER_WRITE;
     messages[0].buf = writeBuffer;
     messages[0].len = 1;
 
@@ -114,6 +113,7 @@ int readRegister16(uint8_t reg, uint8_t* val) {
 
     val[0] = readBuffer[0];
     val[1] = readBuffer[1];
+#endif
 
     return 1;
 }
@@ -133,6 +133,7 @@ int readRegister16(uint8_t reg, uint8_t* val) {
  * метод рассчитан на чтение значений температуры и давления.
  */
 int readRegister24(uint8_t reg, int32_t &val) {
+#if ALT_SRC == 1
     I2cMsg messages[2];
     uint8_t writeBuffer[1] = { reg };
     uint8_t readBuffer[3];
@@ -150,8 +151,9 @@ int readRegister24(uint8_t reg, int32_t &val) {
     I2cError rc = I2cXfer(barometerHandler, 400000, messages, 2);
     if (rc != rcOk)
         return 0;
-
     val = ((int32_t)(readBuffer[0]) << 12) | ((int32_t)(readBuffer[1]) << 4) | ((int32_t)(readBuffer[2]) >> 4);
+#endif
+
     return 1;
 }
 
@@ -474,23 +476,6 @@ void getSensors() {
 }
 
 int initNavigationSystem() {
-    char boardName[NAME_MAX_LENGTH] = {0};
-    if (KnHalGetEnv("board", boardName, sizeof(boardName)) != rcOk) {
-        logEntry("Failed to get board name", ENTITY_NAME, LogLevel::LOG_ERROR);
-        return 0;
-    }
-
-    char gpsConfig[NAME_MAX_LENGTH];
-    if (snprintf(gpsConfig, NAME_MAX_LENGTH, "%s.%s", boardName, gpsConfigSuffix) < 0) {
-        logEntry("Failed to generate UART config name", ENTITY_NAME, LogLevel::LOG_ERROR);
-        return 0;
-    }
-    char barometerConfig[NAME_MAX_LENGTH];
-    if (snprintf(barometerConfig, NAME_MAX_LENGTH, "%s.%s", boardName, barometerConfigSuffix) < 0) {
-        logEntry("Failed to generate I2C config name", ENTITY_NAME, LogLevel::LOG_ERROR);
-        return 0;
-    }
-
     char logBuffer[256] = {0};
     Retcode rc = BspInit(NULL);
     if (rc != BSP_EOK) {
@@ -498,32 +483,15 @@ int initNavigationSystem() {
         logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
         return EXIT_FAILURE;
     }
-    rc = BspEnableModule(bspUart);
-    if (rc != BSP_EOK) {
-        snprintf(logBuffer, 256, "Failed to enable UART %s (" RETCODE_HR_FMT ")", RETCODE_HR_PARAMS(rc));
-        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
-        return EXIT_FAILURE;
-    }
-    rc = BspSetConfig(bspUart, gpsConfig);
-    if (rc != BSP_EOK) {
-        snprintf(logBuffer, 256, "Failed to set BSP config for UART %s (" RETCODE_HR_FMT ")", gpsUart, RETCODE_HR_PARAMS(rc));
-        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
-        return 0;
-    }
-    rc = UartInit();
-    if (rc != rcOk) {
-        snprintf(logBuffer, 256, "Failed to initialize UART (" RETCODE_HR_FMT ")", RETCODE_HR_PARAMS(rc));
-        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
-        return 0;
-    }
 
+#if ALT_SRC == 1
     rc = BspEnableModule(barometerI2C);
     if (rc != rcOk) {
         snprintf(logBuffer, 256, "Failed to enable I2C %s (" RETCODE_HR_FMT ")", barometerI2C, RETCODE_HR_PARAMS(rc));
         logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
         return 0;
     }
-    rc = BspSetConfig(barometerI2C, barometerConfig);
+    rc = BspSetConfig(barometerI2C, "rpi4_bcm2711.p2-3");
     if (rc != rcOk) {
         snprintf(logBuffer, 256, "Failed to set BSP config for I2C %s (" RETCODE_HR_FMT ")", barometerI2C, RETCODE_HR_PARAMS(rc));
         logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
@@ -532,6 +500,26 @@ int initNavigationSystem() {
     rc = I2cInit();
     if (rc != rcOk) {
         snprintf(logBuffer, 256, "Failed to initialize I2C (" RETCODE_HR_FMT ")", RETCODE_HR_PARAMS(rc));
+        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
+        return 0;
+    }
+#endif
+
+    rc = BspEnableModule(gpsUart);
+    if (rc != rcOk) {
+        snprintf(logBuffer, 256, "Failed to enable UART %s (" RETCODE_HR_FMT ")", gpsUart, RETCODE_HR_PARAMS(rc));
+        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
+        return 0;
+    }
+    rc = BspSetConfig(gpsUart, "rpi4_bcm2711.default");
+    if (rc != rcOk) {
+        snprintf(logBuffer, 256, "Failed to set BSP config for UART %s (" RETCODE_HR_FMT ")", gpsUart, RETCODE_HR_PARAMS(rc));
+        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
+        return 0;
+    }
+    rc = UartInit();
+    if (rc != rcOk) {
+        snprintf(logBuffer, 256, "Failed to initialize UART (" RETCODE_HR_FMT ")", RETCODE_HR_PARAMS(rc));
         logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
         return 0;
     }
