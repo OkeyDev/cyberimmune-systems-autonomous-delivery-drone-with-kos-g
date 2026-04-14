@@ -123,14 +123,6 @@ int initPeripheryController() {
         return 0;
     }
 
-    float avgLat = 0;
-    for (int i = 0; i < TAG_NUM; i++)
-        avgLat += 1.0f * tagLats[i] / TAG_NUM;
-    float scale = cos(avgLat * 1.0e-7 * M_PI / 180.0f);
-    if (scale < 0.01f)
-        scale = 0.01f;
-    lngScale *= scale;
-
     return 1;
 }
 
@@ -157,6 +149,20 @@ int initGpioPins() {
     return 1;
 }
 
+int initCamera() {
+#ifdef IS_INSPECTOR
+    float avgLat = 0;
+    for (int i = 0; i < TAG_NUM; i++)
+        avgLat += 1.0f * tagLats[i] / TAG_NUM;
+    float scale = cos(avgLat * 1.0e-7 * M_PI / 180.0f);
+    if (scale < 0.01f)
+        scale = 0.01f;
+    lngScale *= scale;
+#endif
+
+    return 1;
+}
+
 bool isKillSwitchEnabled() {
     return killSwitchEnabled;
 }
@@ -169,7 +175,8 @@ int setBuzzer(bool enable) {
     return 1;
 }
 
-int takePicture(char* picture) {
+int takePicture(std::string& picture) {
+#ifdef IS_INSPECTOR
     int32_t lat, lng, alt;
     getCoords(lat, lng, alt);
 
@@ -179,12 +186,13 @@ int takePicture(char* picture) {
         lngDif = (tagLngs[i] - lng) * lngScale;
 
         if (latDif * latDif + lngDif * lngDif < scanSquaredDistance) {
-            strcpy(picture, tagPictures[i]);
+            picture = std::string(tagPictures[i]);
             return 1;
         }
     }
+    picture = std::string("picture0");
+#endif
 
-    strcpy(picture, "picture0");
     return 1;
 }
 

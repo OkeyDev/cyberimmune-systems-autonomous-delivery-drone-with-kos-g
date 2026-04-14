@@ -66,9 +66,6 @@ public:
  * \~Russian Обработчик IPC-сообщения. См. \ref takePicture.
  */
     void TakePicture(std::string& tag, uint8_t& success) {
-        //TODO: Rewrite to cpp way
-        char t[MaxPictureSize + 1] = {0};
-        success = takePicture(t);
-        tag = std::string(t);
+        success = takePicture(tag);
     }
 };

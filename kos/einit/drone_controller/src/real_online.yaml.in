@@ -49,7 +49,11 @@ entities:
 @INIT_NavigationSystem_ENTITY_CONNECTIONS@
 
 - name: drone_controller.PeripheryController
+  env:
+    VFS_FILESYSTEM_BACKEND: client:kl.VfsSdCardFs
   connections:
+  - target: kl.VfsSdCardFs
+    id: kl.VfsSdCardFs
   - target: drone_controller.Logger
     id: logger_connection
   - target: drone_controller.ServerConnector

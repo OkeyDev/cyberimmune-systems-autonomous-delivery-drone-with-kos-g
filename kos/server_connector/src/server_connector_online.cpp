@@ -218,11 +218,11 @@ int requestServer(char* query, char* response, uint32_t responseSize) {
     return 1;
 }
 
-int publish(char* topic, char* publication) {
+int publish(char* topic, const std::string& publication) {
     char idTopic[256];
     snprintf(idTopic, 256, "%s/%s", topic, getBoardName());
 
-    if (!publisher->publish(NULL, idTopic, strlen(publication), publication))
+    if (!publisher->publish(NULL, idTopic, publication.length(), publication.c_str()))
         return 1;
     else {
         logEntry("Failed to publish message", ENTITY_NAME, LogLevel::LOG_WARNING);

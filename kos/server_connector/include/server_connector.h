@@ -14,6 +14,7 @@
 #pragma once
 
 #include "../../shared/include/ipc_messages_logger.h"
+#include <string>
 
 /**
  * \~English Initializes softwate and hardware components required
@@ -66,7 +67,7 @@ int requestServer(char* query, char* response, uint32_t responseSize);
  * \param[in] publication Сообщение, которое будет опубликовано.
  * \return Возвращает 1, если сообщенияе было успешно опубликовано, иначе -- 0.
  */
-int publish(char* topic, char* publication);
+int publish(char* topic, const std::string& publication);
 
 /**
  * \~English Get message by topic received via MQTT-protocol.

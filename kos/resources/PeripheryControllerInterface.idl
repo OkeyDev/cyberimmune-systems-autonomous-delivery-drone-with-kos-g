@@ -1,6 +1,6 @@
 package drone_controller.PeripheryControllerInterface
 
-const UInt16 MaxPictureSize = 1024;
+const UInt32 MaxPictureSize = 4194304;
 
 interface {
     EnableBuzzer(out UInt8 success);

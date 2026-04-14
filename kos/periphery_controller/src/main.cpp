@@ -39,6 +39,11 @@ int main(void) {
         sleep(1);
     }
 
+    while (!initCamera()) {
+        logEntry("Trying again to initialize camera in 1s", ENTITY_NAME, LogLevel::LOG_WARNING);
+        sleep(1);
+    }
+
     while (!setKillSwitch(false)) {
         logEntry("Trying again to turn off kill-switch in 1s", ENTITY_NAME, LogLevel::LOG_WARNING);
         sleep(1);
