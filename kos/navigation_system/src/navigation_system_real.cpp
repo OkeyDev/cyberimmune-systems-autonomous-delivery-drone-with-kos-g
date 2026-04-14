@@ -40,10 +40,7 @@
 #if COORD_SRC == 1
     char gpsUart[] = "uart3";
 #elif COORD_SRC == 2
-#define LATLON_TO_M 0.011131884502145034
     char gpsUart[] = "uart5";
-    float lnsSin, lnsCos, lnsScale;
-    int32_t prevX, prevY;
 #endif
 UartHandle gpsUartHandler = NULL;
 
@@ -265,10 +262,6 @@ void getSensors() {
                         mode = 10;
                         messageType = 2;
                     }
-                    else if ((head[2] == 'L') && (head[3] == 'N') && (head[4] == 'S')) {
-                        mode = 17;
-                        messageType = 3;
-                    }
                     else
                         mode = 0;
                     idx = 0;
@@ -388,56 +381,10 @@ void getSensors() {
                     idx++;
                 }
                 break;
-            case 17: // X local coordinate
-                if (idx >= 6) {
-                    read = false;
-                    messageType = 0;
-                }
-                else if (value == ',') {
-                    xStr[idx] = '\0';
-                    idx = 0;
-                    mode = 18;
-                }
-                else {
-                    xStr[idx] = value;
-                    idx++;
-                }
-                break;
-            case 18: // Y local coordinate
-                if (idx >= 6) {
-                    read = false;
-                    messageType = 0;
-                }
-                else if (value == ',') {
-                    yStr[idx] = '\0';
-                    idx = 0;
-                    mode = 19;
-                }
-                else {
-                    yStr[idx] = value;
-                    idx++;
-                }
-                break;
-            case 19: // Z local coordinate
-                if (idx >= 6) {
-                    read = false;
-                    messageType = 0;
-                }
-                else if (value == '*') {
-                    zStr[idx] = '\0';
-                    idx = 0;
-                    read = false;
-                }
-                else {
-                    zStr[idx] = value;
-                    idx++;
-                }
-                break;
             }
         }
 
         if (messageType == 1) {
-#if COORD_SRC == 1
             longitude = round(10000000 * atof(lngStr + 3) / 60.0f);
             latitude = round(10000000 * atof(latStr + 2) / 60.0f);
             lngStr[3] = '\0';
@@ -447,29 +394,9 @@ void getSensors() {
 
             setCoords(latitude * latSign, longitude * lngSign);
             setInfo(atof(dopStr), atoi(satsStr));
-#endif
         }
-        else if (messageType == 2) {
-#if COORD_SRC == 1
+        else if (messageType == 2)
             setSpeed(atof(speedStr) / 3.6f);
-#endif
-        }
-        else if (messageType == 3) {
-#if COORD_SRC == 2
-            float lns_x = atof(xStr) / 100.0f;
-            float lns_y = atof(yStr) / 100.0f;
-            float X = lnsCos * lns_x - lnsSin * lns_y;
-            float Y = lnsSin * lns_x + lnsCos * lns_y;
-            int32_t difLat = (int32_t)round(Y / LATLON_TO_M);
-            int32_t difLng = (int32_t)round((X / LATLON_TO_M) / lnsScale);
-
-            setCoords(LNS_LAT + difLat, LNS_LNG + difLng);
-            setInfo(1.0, 8);
-#endif
-#if ALT_SRC == 2
-            setAltitude((int32_t)round(atof(zStr)));
-#endif
-        }
         else
             logEntry("Failed to parse NMEA string from GPS", ENTITY_NAME, LogLevel::LOG_WARNING);
     }
@@ -571,15 +498,6 @@ int initSensors() {
         logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_WARNING);
         return 0;
     }
-#elif COORD_SRC == 2
-    float lnsAngle = (LNS_ANGLE * M_PI / 180.0f);
-    lnsSin = sin(lnsAngle);
-    lnsCos = cos(lnsAngle);
-    lnsScale = cos(LNS_LAT * 1.0e-7 * M_PI / 180.0f);
-    if (lnsScale < 0.01f)
-        lnsScale = 0.01f;
-    prevX = 0;
-    prevY = 0;
 #endif
 
 #if ALT_SRC == 1
