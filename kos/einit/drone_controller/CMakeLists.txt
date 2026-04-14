@@ -199,4 +199,9 @@ else ()
                         KLOG_ENTITY KlogEntityHw
                         IMAGE_FILES ${ENTITIES} ${FIRMWARE_FILES} ${FILES})
     target_link_libraries (KlogEntityHw kssaudit)
+# SD card image with KasperskyOS for the target hardware platform.
+    include (${KL_SDK_ROOT_PATH}/common/build-sd-image.cmake)
+    build_sd_image (sd-image
+                        KOS_IMAGE_TARGET kos-image
+                        PATH_PARTITION1_IMAGE ${IMAGE_FS})
 endif()
