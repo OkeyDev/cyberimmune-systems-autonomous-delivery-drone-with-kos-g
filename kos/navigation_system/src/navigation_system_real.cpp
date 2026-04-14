@@ -229,8 +229,8 @@ void getSensors() {
     bool read;
     uint8_t value;
     int mode, messageType, idx, latSign, lngSign;
-    int32_t latitude, longitude;
-    char head[8], satsStr[8], dopStr[8], latStr[16], lngStr[16], speedStr[16], xStr[6], yStr[6], zStr[6];
+    int32_t latitude, longitude, altitude;
+    char head[8], satsStr[8], dopStr[8], latStr[16], lngStr[16], speedStr[16], altStr[16];
 
     while (true) {
         read = true;
@@ -359,10 +359,25 @@ void getSensors() {
                 else if (value == ',') {
                     dopStr[idx] = '\0';
                     idx = 0;
-                    read = false;
+                    mode = 17;
                 }
                 else {
                     dopStr[idx] = value;
+                    idx++;
+                }
+                break;
+            case 17:
+                if (idx >= 16) {
+                    read = false;
+                    messageType = 0;;
+                }
+                else if (value == ',') {
+                    altStr[idx] = '\0';
+                    idx = 0;
+                    read = false;
+                }
+                else {
+                    altStr[idx] = value;
                     idx++;
                 }
                 break;
@@ -393,6 +408,11 @@ void getSensors() {
             latitude += 10000000 * atoi(latStr);
 
             setCoords(latitude * latSign, longitude * lngSign);
+
+#if ALT_SRC == 2
+            altitude = round(atof(altStr) * 100);
+            setAltitude(altitude);
+#endif
             setInfo(atof(dopStr), atoi(satsStr));
         }
         else if (messageType == 2)

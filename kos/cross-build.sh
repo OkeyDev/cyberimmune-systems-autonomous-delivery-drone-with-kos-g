@@ -214,6 +214,11 @@ if [ "$SDK_TYPE" == "" ] || [ "$SDK_VERSION" == "" ]; then
     exit 1
 fi
 
+if [ "$COORD_SRC" == 1 ] && [ "$ALT_SRC" == 2 ]; then
+    echo "Could not use GNSS and LNS at the same time"
+    exit 1
+fi
+
 if [ "$SIMULATION" == "TRUE" ]; then
     if [ "$INSPECTOR_ROLE" == "TRUE" ]; then
         if [ "$BOARD_ID" == "" ]; then
