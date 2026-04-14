@@ -33,7 +33,6 @@ int getBoardId(char* id) {
     if (!success)
         return 0;
     boardId.copy(id, boardId.size() + 1);
-
     return 1;
 }
 
@@ -56,9 +55,7 @@ int sendRequest(char* query, char* response, uint32_t responseSize) {
 
     if (!success)
         return 0;
-
     r.copy(response, r.size() + 1);
-
     return 1;
 }
 
@@ -92,11 +89,12 @@ int receiveSubscription(char* topic, char* subscription, uint32_t subscriptionSi
         proxy->ReceiveSubscription(std::string(topic), s, success);
     }
     catch (...) {
-        std::cerr << "Exception on proxy->ReceiveSubscription: topic=" << std::string(topic) << std::endl;
+        std::cerr << "Exception on proxy->ReceiveSubscription: topic=" << std::string(topic) << " receive" << std::endl;
         return 0;
     }
 
+    if (!success)
+        return 0;
     s.copy(subscription, s.size() + 1);
-
     return 1;
 }

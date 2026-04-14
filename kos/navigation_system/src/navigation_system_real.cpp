@@ -32,24 +32,17 @@
 
 #if ALT_SRC == 1
     std::thread barometerThread;
+
+    char barometerI2C[] = "i2c1";
+    I2cHandle barometerHandler = NULL;
 #endif
 
 #if COORD_SRC == 1
-    char bspUart[] = "uart3";
-    char gpsUart[] = "serial@7e201600";
+    char gpsUart[] = "uart3";
 #elif COORD_SRC == 2
-#define LATLON_TO_M 0.011131884502145034
-    char bspUart[] = "uart5";
-    char gpsUart[] = "serial@7e201a00";
-    float lnsSin, lnsCos, lnsScale;
-    int32_t prevX, prevY;
+    char gpsUart[] = "uart5";
 #endif
-char gpsConfigSuffix[] = "default";
 UartHandle gpsUartHandler = NULL;
-
-char barometerI2C[] = "i2c1";
-char barometerConfigSuffix[] = "p2-3";
-I2cHandle barometerHandler = NULL;
 
 int32_t tempCoefs[3];
 int32_t pressCoefs[9];
@@ -68,17 +61,19 @@ float temperatureFine;
  * \return Возвращает 1 при успешной записи, иначе -- 0.
  */
 int writeRegister(uint8_t reg, uint8_t val) {
+#if ALT_SRC == 1
     I2cMsg messages[1];
     uint8_t buf[2] = { reg, val };
 
     messages[0].addr = 0x76;
-    messages[0].flags = 0;
+    messages[0].flags = I2C_MASTER_WRITE;
     messages[0].buf = buf;
     messages[0].len = 2;
 
     Retcode rc = I2cXfer(barometerHandler, 400000, messages, 1);
     if (rc != rcOk)
         return 0;
+#endif
 
     return 1;
 }
@@ -94,12 +89,13 @@ int writeRegister(uint8_t reg, uint8_t val) {
  * \return Возвращает 1 при успешном чтении, иначе -- 0.
  */
 int readRegister16(uint8_t reg, uint8_t* val) {
+#if ALT_SRC == 1
     I2cMsg messages[2];
     uint8_t writeBuffer[1] = { reg };
     uint8_t readBuffer[2];
 
     messages[0].addr = 0x76;
-    messages[0].flags = 0;
+    messages[0].flags = I2C_MASTER_WRITE;
     messages[0].buf = writeBuffer;
     messages[0].len = 1;
 
@@ -114,6 +110,7 @@ int readRegister16(uint8_t reg, uint8_t* val) {
 
     val[0] = readBuffer[0];
     val[1] = readBuffer[1];
+#endif
 
     return 1;
 }
@@ -133,6 +130,7 @@ int readRegister16(uint8_t reg, uint8_t* val) {
  * метод рассчитан на чтение значений температуры и давления.
  */
 int readRegister24(uint8_t reg, int32_t &val) {
+#if ALT_SRC == 1
     I2cMsg messages[2];
     uint8_t writeBuffer[1] = { reg };
     uint8_t readBuffer[3];
@@ -150,8 +148,9 @@ int readRegister24(uint8_t reg, int32_t &val) {
     I2cError rc = I2cXfer(barometerHandler, 400000, messages, 2);
     if (rc != rcOk)
         return 0;
-
     val = ((int32_t)(readBuffer[0]) << 12) | ((int32_t)(readBuffer[1]) << 4) | ((int32_t)(readBuffer[2]) >> 4);
+#endif
+
     return 1;
 }
 
@@ -230,8 +229,8 @@ void getSensors() {
     bool read;
     uint8_t value;
     int mode, messageType, idx, latSign, lngSign;
-    int32_t latitude, longitude;
-    char head[8], satsStr[8], dopStr[8], latStr[16], lngStr[16], speedStr[16], xStr[6], yStr[6], zStr[6];
+    int32_t latitude, longitude, altitude;
+    char head[8], satsStr[8], dopStr[8], latStr[16], lngStr[16], speedStr[16], altStr[16];
 
     while (true) {
         read = true;
@@ -262,10 +261,6 @@ void getSensors() {
                     else if ((head[2] == 'V') && (head[3] == 'T') && (head[4] == 'G')) {
                         mode = 10;
                         messageType = 2;
-                    }
-                    else if ((head[2] == 'L') && (head[3] == 'N') && (head[4] == 'S')) {
-                        mode = 17;
-                        messageType = 3;
                     }
                     else
                         mode = 0;
@@ -364,10 +359,25 @@ void getSensors() {
                 else if (value == ',') {
                     dopStr[idx] = '\0';
                     idx = 0;
-                    read = false;
+                    mode = 17;
                 }
                 else {
                     dopStr[idx] = value;
+                    idx++;
+                }
+                break;
+            case 17:
+                if (idx >= 16) {
+                    read = false;
+                    messageType = 0;;
+                }
+                else if (value == ',') {
+                    altStr[idx] = '\0';
+                    idx = 0;
+                    read = false;
+                }
+                else {
+                    altStr[idx] = value;
                     idx++;
                 }
                 break;
@@ -386,56 +396,10 @@ void getSensors() {
                     idx++;
                 }
                 break;
-            case 17: // X local coordinate
-                if (idx >= 6) {
-                    read = false;
-                    messageType = 0;
-                }
-                else if (value == ',') {
-                    xStr[idx] = '\0';
-                    idx = 0;
-                    mode = 18;
-                }
-                else {
-                    xStr[idx] = value;
-                    idx++;
-                }
-                break;
-            case 18: // Y local coordinate
-                if (idx >= 6) {
-                    read = false;
-                    messageType = 0;
-                }
-                else if (value == ',') {
-                    yStr[idx] = '\0';
-                    idx = 0;
-                    mode = 19;
-                }
-                else {
-                    yStr[idx] = value;
-                    idx++;
-                }
-                break;
-            case 19: // Z local coordinate
-                if (idx >= 6) {
-                    read = false;
-                    messageType = 0;
-                }
-                else if (value == '*') {
-                    zStr[idx] = '\0';
-                    idx = 0;
-                    read = false;
-                }
-                else {
-                    zStr[idx] = value;
-                    idx++;
-                }
-                break;
             }
         }
 
         if (messageType == 1) {
-#if COORD_SRC == 1
             longitude = round(10000000 * atof(lngStr + 3) / 60.0f);
             latitude = round(10000000 * atof(latStr + 2) / 60.0f);
             lngStr[3] = '\0';
@@ -444,53 +408,21 @@ void getSensors() {
             latitude += 10000000 * atoi(latStr);
 
             setCoords(latitude * latSign, longitude * lngSign);
-            setInfo(atof(dopStr), atoi(satsStr));
-#endif
-        }
-        else if (messageType == 2) {
-#if COORD_SRC == 1
-            setSpeed(atof(speedStr) / 3.6f);
-#endif
-        }
-        else if (messageType == 3) {
-#if COORD_SRC == 2
-            float lns_x = atof(xStr) / 100.0f;
-            float lns_y = atof(yStr) / 100.0f;
-            float X = lnsCos * lns_x - lnsSin * lns_y;
-            float Y = lnsSin * lns_x + lnsCos * lns_y;
-            int32_t difLat = (int32_t)round(Y / LATLON_TO_M);
-            int32_t difLng = (int32_t)round((X / LATLON_TO_M) / lnsScale);
 
-            setCoords(LNS_LAT + difLat, LNS_LNG + difLng);
-            setInfo(1.0, 8);
-#endif
 #if ALT_SRC == 2
-            setAltitude((int32_t)round(atof(zStr)));
+            altitude = round(atof(altStr) * 100);
+            setAltitude(altitude);
 #endif
+            setInfo(atof(dopStr), atoi(satsStr));
         }
+        else if (messageType == 2)
+            setSpeed(atof(speedStr) / 3.6f);
         else
             logEntry("Failed to parse NMEA string from GPS", ENTITY_NAME, LogLevel::LOG_WARNING);
     }
 }
 
 int initNavigationSystem() {
-    char boardName[NAME_MAX_LENGTH] = {0};
-    if (KnHalGetEnv("board", boardName, sizeof(boardName)) != rcOk) {
-        logEntry("Failed to get board name", ENTITY_NAME, LogLevel::LOG_ERROR);
-        return 0;
-    }
-
-    char gpsConfig[NAME_MAX_LENGTH];
-    if (snprintf(gpsConfig, NAME_MAX_LENGTH, "%s.%s", boardName, gpsConfigSuffix) < 0) {
-        logEntry("Failed to generate UART config name", ENTITY_NAME, LogLevel::LOG_ERROR);
-        return 0;
-    }
-    char barometerConfig[NAME_MAX_LENGTH];
-    if (snprintf(barometerConfig, NAME_MAX_LENGTH, "%s.%s", boardName, barometerConfigSuffix) < 0) {
-        logEntry("Failed to generate I2C config name", ENTITY_NAME, LogLevel::LOG_ERROR);
-        return 0;
-    }
-
     char logBuffer[256] = {0};
     Retcode rc = BspInit(NULL);
     if (rc != BSP_EOK) {
@@ -498,32 +430,15 @@ int initNavigationSystem() {
         logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
         return EXIT_FAILURE;
     }
-    rc = BspEnableModule(bspUart);
-    if (rc != BSP_EOK) {
-        snprintf(logBuffer, 256, "Failed to enable UART %s (" RETCODE_HR_FMT ")", RETCODE_HR_PARAMS(rc));
-        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
-        return EXIT_FAILURE;
-    }
-    rc = BspSetConfig(bspUart, gpsConfig);
-    if (rc != BSP_EOK) {
-        snprintf(logBuffer, 256, "Failed to set BSP config for UART %s (" RETCODE_HR_FMT ")", gpsUart, RETCODE_HR_PARAMS(rc));
-        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
-        return 0;
-    }
-    rc = UartInit();
-    if (rc != rcOk) {
-        snprintf(logBuffer, 256, "Failed to initialize UART (" RETCODE_HR_FMT ")", RETCODE_HR_PARAMS(rc));
-        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
-        return 0;
-    }
 
+#if ALT_SRC == 1
     rc = BspEnableModule(barometerI2C);
     if (rc != rcOk) {
         snprintf(logBuffer, 256, "Failed to enable I2C %s (" RETCODE_HR_FMT ")", barometerI2C, RETCODE_HR_PARAMS(rc));
         logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
         return 0;
     }
-    rc = BspSetConfig(barometerI2C, barometerConfig);
+    rc = BspSetConfig(barometerI2C, "rpi4_bcm2711.p2-3");
     if (rc != rcOk) {
         snprintf(logBuffer, 256, "Failed to set BSP config for I2C %s (" RETCODE_HR_FMT ")", barometerI2C, RETCODE_HR_PARAMS(rc));
         logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
@@ -532,6 +447,26 @@ int initNavigationSystem() {
     rc = I2cInit();
     if (rc != rcOk) {
         snprintf(logBuffer, 256, "Failed to initialize I2C (" RETCODE_HR_FMT ")", RETCODE_HR_PARAMS(rc));
+        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
+        return 0;
+    }
+#endif
+
+    rc = BspEnableModule(gpsUart);
+    if (rc != rcOk) {
+        snprintf(logBuffer, 256, "Failed to enable UART %s (" RETCODE_HR_FMT ")", gpsUart, RETCODE_HR_PARAMS(rc));
+        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
+        return 0;
+    }
+    rc = BspSetConfig(gpsUart, "rpi4_bcm2711.default");
+    if (rc != rcOk) {
+        snprintf(logBuffer, 256, "Failed to set BSP config for UART %s (" RETCODE_HR_FMT ")", gpsUart, RETCODE_HR_PARAMS(rc));
+        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
+        return 0;
+    }
+    rc = UartInit();
+    if (rc != rcOk) {
+        snprintf(logBuffer, 256, "Failed to initialize UART (" RETCODE_HR_FMT ")", RETCODE_HR_PARAMS(rc));
         logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
         return 0;
     }
@@ -583,15 +518,6 @@ int initSensors() {
         logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_WARNING);
         return 0;
     }
-#elif COORD_SRC == 2
-    float lnsAngle = (LNS_ANGLE * M_PI / 180.0f);
-    lnsSin = sin(lnsAngle);
-    lnsCos = cos(lnsAngle);
-    lnsScale = cos(LNS_LAT * 1.0e-7 * M_PI / 180.0f);
-    if (lnsScale < 0.01f)
-        lnsScale = 0.01f;
-    prevX = 0;
-    prevY = 0;
 #endif
 
 #if ALT_SRC == 1

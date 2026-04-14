@@ -17,7 +17,6 @@
 #include <coresrv/hal/hal_api.h>
 #include <rtl/retcode_hr.h>
 #include <gpio/gpio.h>
-#include <uart/uart.h>
 #include <bsp/bsp.h>
 
 #include <stdio.h>
@@ -32,13 +31,7 @@
 #define NAME_MAX_LENGTH 64
 
 char gpio[] = "gpio0";
-char gpioConfigSuffix[] = "default";
 GpioHandle gpioHandler = NULL;
-
-char bspUart[] = "uart4";
-char rfidUart[] = "serial@7e201800";
-char rfidConfigSuffix[] = "default";
-UartHandle rfidUartHandler = NULL;
 
 uint8_t pinBuzzer = 20;
 uint8_t pinCargoLock = 21;
@@ -71,24 +64,6 @@ int setPin(uint8_t pin, bool mode) {
 }
 
 int initPeripheryController() {
-    char boardName[NAME_MAX_LENGTH] = {0};
-    if (KnHalGetEnv("board", boardName, sizeof(boardName)) != rcOk) {
-        logEntry("Failed to get board name", ENTITY_NAME, LogLevel::LOG_ERROR);
-        return 0;
-    }
-
-    char gpioConfig[NAME_MAX_LENGTH];
-    if (snprintf(gpioConfig, NAME_MAX_LENGTH, "%s.%s", boardName, gpioConfigSuffix) < 0) {
-        logEntry("Failed to generate GPIO config name", ENTITY_NAME, LogLevel::LOG_ERROR);
-        return 0;
-    }
-
-    char rfidConfig[NAME_MAX_LENGTH] = {0};
-    if (snprintf(rfidConfig, NAME_MAX_LENGTH, "%s.%s", boardName, rfidConfigSuffix) < 0) {
-        logEntry("Failed to generate UART config name", ENTITY_NAME, LogLevel::LOG_ERROR);
-        return 0;
-    }
-
     char logBuffer[256] = {0};
     Retcode rc = BspInit(NULL);
     if (rc != rcOk) {
@@ -96,7 +71,7 @@ int initPeripheryController() {
         logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
         return 0;
     }
-    rc = BspSetConfig(gpio, gpioConfig);
+    rc = BspSetConfig(gpio, "rpi4_bcm2711.default");
     if (rc != rcOk) {
         snprintf(logBuffer, 256, "Failed to set BSP config for GPIO %s (" RETCODE_HR_FMT ")", gpio, RETCODE_HR_PARAMS(rc));
         logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
@@ -105,24 +80,6 @@ int initPeripheryController() {
     rc = GpioInit();
     if (rc != rcOk) {
         snprintf(logBuffer, 256, "Failed to initialize GPIO (" RETCODE_HR_FMT ")", RC_GET_CODE(rc));
-        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
-        return 0;
-    }
-    rc = BspEnableModule(bspUart);
-    if (rc != rcOk) {
-        snprintf(logBuffer, 256, "Failed to enable UART %s (" RETCODE_HR_FMT ")", rfidUart, RETCODE_HR_PARAMS(rc));
-        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
-        return 0;
-    }
-    rc = BspSetConfig(bspUart, rfidConfig);
-    if (rc != rcOk) {
-        snprintf(logBuffer, 256, "Failed to set BSP config for UART %s (" RETCODE_HR_FMT ")", rfidUart, RETCODE_HR_PARAMS(rc));
-        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
-        return 0;
-    }
-    rc = UartInit();
-    if (rc != rcOk) {
-        snprintf(logBuffer, 256, "Failed to initialize UART (" RETCODE_HR_FMT ")", RETCODE_HR_PARAMS(rc));
         logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
         return 0;
     }
@@ -147,14 +104,6 @@ int initGpioPins() {
             logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_WARNING);
             return 0;
         }
-    }
-
-    rc = UartOpenPort(rfidUart, &rfidUartHandler);
-    if (rc != rcOk) {
-        char logBuffer[256] = {0};
-        snprintf(logBuffer, 256, "Failed to open UART %s (" RETCODE_HR_FMT ")", rfidUart, RETCODE_HR_PARAMS(rc));
-        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_WARNING);
-        return 0;
     }
 
     return 1;

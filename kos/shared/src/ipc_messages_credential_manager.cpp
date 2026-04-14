@@ -25,15 +25,13 @@ int signMessage(char* message, char* signature, uint32_t signatureSize) {
         proxy->SignMessage(std::string(message), success, sign);
     }
     catch (...) {
-        std::cerr << "Exception on proxy->SignMessage request: message=" << std::string(message) << std::endl;
+        std::cerr << "Exception on proxy->SignMessage request: message=" << std::string(message) << " signing" << std::endl;
         return 0;
     }
 
     if (!success)
         return 0;
-
     sign.copy(signature, sign.size() + 1);
-
     return 1;
 }
 
@@ -47,13 +45,9 @@ int checkSignature(char* message, MessageSource source, uint8_t &authenticity) {
         proxy->CheckSignature(std::string(message), (uint8_t)source, success, authenticity);
     }
     catch (...) {
-        std::cerr << "Exception on proxy->CheckSignature request: message="
-            << std::string(message) << std::endl;
+        std::cerr << "Exception on proxy->CheckSignature request: message=" << std::string(message) << " signature checking" << std::endl;
         return 0;
     }
 
-    if (!success)
-        return 0;
-
-    return 1;
+    return success;
 }

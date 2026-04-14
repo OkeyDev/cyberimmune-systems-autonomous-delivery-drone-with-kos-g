@@ -25,8 +25,8 @@ MQTT_IP="10.0.2.2"
 MQTT_USERNAME=""
 MQTT_PASSWORD=""
 NTP_IP=${SERVER_IP}
-COORD_SRC=1
-ALT_SRC=1
+COORD_SRC=2
+ALT_SRC=2
 SD_IMAGE="FALSE"
 
 set -eu
@@ -226,6 +226,11 @@ if [ "$SDK_TYPE" == "" ] || [ "$SDK_VERSION" == "" ]; then
     exit 1
 fi
 
+if [ "$COORD_SRC" == 1 ] && [ "$ALT_SRC" == 2 ]; then
+    echo "Could not use GNSS and LNS at the same time"
+    exit 1
+fi
+
 if [ "$SIMULATION" == "TRUE" ]; then
     if [ "$INSPECTOR_ROLE" == "TRUE" ]; then
         if [ "$BOARD_ID" == "" ]; then
@@ -270,5 +275,4 @@ export INSTALL_PREFIX="$BUILD/../install"
 
 if [ "$SD_IMAGE" == "TRUE" ]; then
 	"$SDK_PREFIX/toolchain/bin/cmake" --build "$BUILD" --target "sd-image" --verbose
-
 fi

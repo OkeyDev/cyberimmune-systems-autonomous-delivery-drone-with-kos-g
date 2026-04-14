@@ -22,7 +22,7 @@ if (SIMULATION)
     target_compile_definitions (PeripheryController PRIVATE SIMULATOR_IP="${SIMULATOR_IP}")
     bind_nk_targets (PeripheryController vfs::client PERIPHERY_CONTROLLER_EDL)
 else ()
-    bind_nk_targets (PeripheryController bsp::client gpio::client uart::client PERIPHERY_CONTROLLER_EDL)
+    bind_nk_targets (PeripheryController bsp::client gpio::client PERIPHERY_CONTROLLER_EDL)
 endif()
 bind_nk_targets (PeripheryController ${CMAKE_THREAD_LIBS_INIT} PERIPHERY_CONTROLLER_EDL)
 

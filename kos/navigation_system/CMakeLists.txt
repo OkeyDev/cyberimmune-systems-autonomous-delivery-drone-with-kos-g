@@ -22,7 +22,7 @@ if (SIMULATION)
     bind_nk_targets (NavigationSystem vfs::client NAVIGATION_SYSTEM_EDL)
 else ()
     target_compile_definitions (NavigationSystem PRIVATE COORD_SRC=${COORD_SRC} ALT_SRC=${ALT_SRC})
-    bind_nk_targets (NavigationSystem bsp::client uart::client i2c::client NAVIGATION_SYSTEM_EDL)
+    bind_nk_targets (NavigationSystem bsp::client uart::client i2c::process_interface NAVIGATION_SYSTEM_EDL)
 endif ()
 bind_nk_targets (NavigationSystem ${CMAKE_THREAD_LIBS_INIT} NAVIGATION_SYSTEM_EDL)
 

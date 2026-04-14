@@ -31,8 +31,8 @@ int waitForArmRequest() {
             proxy->WaitForArmRequest(success);
         }
         catch (...) {
-            std::cerr << "Error in waitForArmRequest" << std::endl;
-            return 1;
+            std::cerr << "Exception on waitForArmRequest" << std::endl;
+            return 0;
         }
 
         if (success)
@@ -53,8 +53,8 @@ int permitArm() {
         proxy->PermitArm(success);
     }
     catch (...) {
-        std::cerr << "Error in permitArm" << std::endl;
-        return 1;
+        std::cerr << "Exception on permitArm" << std::endl;
+        return 0;
     }
 
     return success;
@@ -70,8 +70,8 @@ int forbidArm() {
         proxy->ForbidArm(success);
     }
     catch (...) {
-        std::cerr << "Error in forbidArm" << std::endl;
-        return 1;
+        std::cerr << "Exception on forbidArm" << std::endl;
+        return 0;
     }
 
     return success;
@@ -87,8 +87,8 @@ int pauseFlight() {
         proxy->PauseFlight(success);
     }
     catch (...) {
-        std::cerr << "Error in pauseFlight" << std::endl;
-        return 1;
+        std::cerr << "Exception on pauseFlight" << std::endl;
+        return 0;
     }
 
     return success;
@@ -104,8 +104,8 @@ int resumeFlight() {
         proxy->ResumeFlight(success);
     }
     catch (...) {
-        std::cerr << "Error in resumeFlight" << std::endl;
-        return 1;
+        std::cerr << "Exception on resumeFlight" << std::endl;
+        return 0;
     }
 
     return success;
@@ -121,8 +121,8 @@ int abortMission() {
         proxy->AbortMission(success);
     }
     catch (...) {
-        std::cerr << "Error in abortMission" << std::endl;
-        return 1;
+        std::cerr << "Exception on abortMission" << std::endl;
+        return 0;
     }
 
     return success;
@@ -138,8 +138,8 @@ int changeSpeed(int32_t speed) {
         proxy->ChangeSpeed(speed, success);
     }
     catch (...) {
-        std::cerr << "Error in changeSpeed: speed=" << speed << std::endl;
-        return 1;
+        std::cerr << "Exception on changeSpeed: speed=" << speed << " command" << std::endl;
+        return 0;
     }
 
     return success;
@@ -155,8 +155,8 @@ int changeAltitude(int32_t altitude) {
         proxy->ChangeAltitude(altitude, success);
     }
     catch (...) {
-        std::cerr << "Error in changeAltitude: altitude=" << altitude << std::endl;
-        return 1;
+        std::cerr << "Exception on changeAltitude: altitude=" << altitude << " command" << std::endl;
+        return 0;
     }
 
     return success;
@@ -172,8 +172,8 @@ int changeWaypoint(int32_t latitude, int32_t longitude, int32_t altitude) {
         proxy->ChangeWaypoint(latitude, longitude, altitude, success);
     }
     catch (...) {
-        std::cerr << "Error in changeWaypoint: latitude=" << latitude << ", longitude=" << longitude << ", altitude=" << altitude << std::endl;
-        return 1;
+        std::cerr << "Exception on changeWaypoint: latitude=" << latitude << ", longitude=" << longitude << ", altitude=" << altitude << " command" << std::endl;
+        return 0;
     }
 
     return success;
@@ -183,15 +183,15 @@ int setMission(uint8_t* mission, uint32_t missionSize) {
     //TODO: rewrite without PureClient and ugly sizeof
     uint8_t success;
     kosipc::Application app = kosipc::MakeApplicationPureClient();
-    std::vector<uint8_t> m(mission, mission + sizeof mission / sizeof mission[0]);
+    std::vector<uint8_t> m(mission, mission + missionSize);
     auto proxy              = app.MakeProxy<AutopilotConnectorInterface>(kosipc::ConnectStaticChannel("autopilot_connector_connection", "interface"));
 
     try {
-        proxy->SetMission(m, m.size(), success);
+        proxy->SetMission(m, missionSize, success);
     }
     catch (...) {
-        std::cerr << "Error in setMission" << std::endl;
-        return 1;
+        std::cerr << "Exception on setMission" << std::endl;
+        return 0;
     }
 
     return success;

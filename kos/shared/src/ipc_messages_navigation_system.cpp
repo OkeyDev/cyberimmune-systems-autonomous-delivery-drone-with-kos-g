@@ -46,9 +46,10 @@ int getGpsInfo(float& dop, int32_t& sats) {
         return 0;
     }
 
+    if (!success)
+        return 0;
     std::memcpy(&dop, &d, sizeof(float));
-
-    return success;
+    return 1;
 }
 
 int getEstimatedSpeed(float& speed) {
@@ -66,7 +67,8 @@ int getEstimatedSpeed(float& speed) {
         return 0;
     }
 
+    if (!success)
+        return 0;
     std::memcpy(&speed, &s, sizeof(float));
-
-    return success;
+    return 1;
 }
