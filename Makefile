@@ -38,6 +38,7 @@ docker-image-simulator-rpi: SDK_FOLDER_NAME=KasperskyOS-Community-Edition-Raspbe
 docker-image-simulator-rpi: SDK_PKG_NAME=KasperskyOS-Community-Edition-RaspberryPi4b-1.4.0.102_ru.deb
 docker-image-simulator-rpi:
 	docker build ./ -t simulator-rpi --build-arg SDK_FOLDER_NAME=$(SDK_FOLDER_NAME) --build-arg SDK_PKG_NAME=$(SDK_PKG_NAME)
+
 docker-image-orvd: ## Сборка образа docker с ОрВД
 	docker build -f orvd.Dockerfile -t orvd ./
 
@@ -49,6 +50,18 @@ docker-image-ntp-server: ## Сборка образа docker с NTP сервер
 
 docker-image-recognizer: ## Сборка образа docker с recognizer
 	docker build -t recognizer ./recognizer
+
+docker-build-image-deliverer: ## Сборка kos-image для deliverer
+	docker run --rm --user user -v `pwd`:/mnt -ti simulator-rpi:latest /bin/bash -c "cd mnt/kos; ./cross-build.sh --target hardware --mode online --alt lns --role deliverer --coords lns"
+
+docker-build-image-deliverer-with-sd-image: ## Сборка kos-image для deliverer с hdd.img образом для sd карты
+	docker run --rm --user user -v `pwd`:/mnt -ti simulator-rpi:latest /bin/bash -c "cd mnt/kos; ./cross-build.sh --target hardware-with-image --mode online --alt lns --role deliverer --coords lns"
+
+docker-build-image-inspector: ## Сборка kos-image для inspector
+	docker run --rm --user user -v `pwd`:/mnt -ti simulator-rpi:latest /bin/bash -c "cd mnt/kos; ./cross-build.sh --target hardware --mode online --alt lns --role inspector --coords lns"
+
+docker-build-image-inspector-with-sd-image: ## Сборка kos-image для inspector с hdd.img образом для sd карты
+	docker run --rm --user user -v `pwd`:/mnt -ti simulator-rpi:latest /bin/bash -c "cd mnt/kos; ./cross-build.sh --target hardware-with-image --mode online --alt lns --role inspector --coords lns"
 
 clean-docker-compose: ## Подчистка docker-compose после запуска проекта или тестов
 	docker compose -f docker-compose-offline.yml down
