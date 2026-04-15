@@ -51,24 +51,3 @@ int getGpsInfo(float& dop, int32_t& sats) {
     std::memcpy(&dop, &d, sizeof(float));
     return 1;
 }
-
-int getEstimatedSpeed(float& speed) {
-    //TODO: rewrite without PureClient
-    uint8_t success;
-    kosipc::Application app = kosipc::MakeApplicationPureClient();
-    auto proxy              = app.MakeProxy<NavigationSystemInterface>(kosipc::ConnectStaticChannel("navigation_system_connection", "interface"));
-
-    int32_t s;
-    try {
-        proxy->GetSpeed(success, s);
-    }
-    catch (...) {
-        std::cerr << "Exception on proxy->GetSpeed request" << std::endl;
-        return 0;
-    }
-
-    if (!success)
-        return 0;
-    std::memcpy(&speed, &s, sizeof(float));
-    return 1;
-}

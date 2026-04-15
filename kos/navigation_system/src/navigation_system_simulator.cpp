@@ -50,11 +50,6 @@ struct SimSensorDataMessage {
      * \~Russian Абсолютная высота текущего местоположения дрона в см.
      */
     int32_t altitude;
-    /**
-     * \~English Сurrent speed of the drone in m/s.
-     * \~Russian Текущая скорость дрона в м/с.
-     */
-    float speed;
 };
 
 /** \cond */
@@ -93,7 +88,6 @@ void getSensors() {
                 SimSensorDataMessage *data = (SimSensorDataMessage*)message;
                 setCoords(data->latitude, data->longitude);
                 setAltitude(data->altitude);
-                setSpeed(data->speed);
             }
             else {
                 char logBuffer[256] = {0};

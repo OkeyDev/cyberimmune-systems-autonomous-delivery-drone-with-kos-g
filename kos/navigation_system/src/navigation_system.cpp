@@ -26,7 +26,6 @@ std::mutex sensorMutex;
 bool hasAlt = false;
 bool hasCoords = false;
 
-float sensorSpeed = 0.0f;
 float sensorDop = 0.0f;
 int32_t sensorSats = 0;
 int32_t sensorLatitude = 0;
@@ -41,7 +40,7 @@ bool hasPosition() {
 void sendCoords() {
     char publication[1024] = {0};
 
-    float dop, speed;
+    float dop;
     int32_t prevLat, prevLng, lat, lng, alt, azimuth, sats;
     while (!getPosition(prevLat, prevLng, alt)) {
         logEntry("Failed to get coords from Navigation System. Trying again in 1s", ENTITY_NAME, LogLevel::LOG_WARNING);
@@ -53,13 +52,11 @@ void sendCoords() {
             logEntry("Failed to get GPS coords. Trying again in 500ms", ENTITY_NAME, LogLevel::LOG_WARNING);
         else if (!getInfo(dop, sats))
             logEntry("Failed to get GPS's sats and dop. Trying again in 500ms", ENTITY_NAME, LogLevel::LOG_WARNING);
-        else if (!getSpeed(speed))
-            logEntry("Failed to get GPS's speed. Trying again in 500ms", ENTITY_NAME, LogLevel::LOG_WARNING);
         else {
             azimuth = round(atan2(lng - prevLng, lat - prevLat) * 1800000000 / M_PI);
             prevLat = lat;
             prevLng = lng;
-            snprintf(publication, 1024, "lat=%d&lon=%d&alt=%d&azimuth=%d&dop=%f&sats=%d&speed=%f", lat, lng, alt, azimuth, dop, sats, speed);
+            snprintf(publication, 1024, "lat=%d&lon=%d&alt=%d&azimuth=%d&dop=%f&sats=%d", lat, lng, alt, azimuth, dop, sats);
             if (!publishMessage("api/telemetry", publication))
                 logEntry("Failed to publish telemetry message. Trying again in 500ms", ENTITY_NAME, LogLevel::LOG_WARNING);
         }
@@ -125,25 +122,6 @@ int getPosition(int32_t &latitude, int32_t &longitude, int32_t &altitude) {
         latitude = 0;
         longitude = 0;
         altitude = 0;
-        return 0;
-    }
-}
-
-void setSpeed(float speed) {
-    sensorMutex.lock();
-    sensorSpeed = speed;
-    sensorMutex.unlock();
-}
-
-int getSpeed(float &speed) {
-    if (hasPosition()) {
-        sensorMutex.lock();
-        speed = sensorSpeed;
-        sensorMutex.unlock();
-        return 1;
-    }
-    else {
-        speed = 0.0f;
         return 0;
     }
 }
