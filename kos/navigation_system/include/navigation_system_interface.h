@@ -54,14 +54,4 @@ public:
         success = getInfo(d, sats);
         std::memcpy(&dop, &d, sizeof(float));
     }
-
-/**
- * \~English IPC message handler. See \ref getGpsInfo.
- * \~Russian Обработчик IPC-сообщения. См. \ref getGpsInfo.
- */
-    void GetSpeed(uint8_t& success, int32_t& speed) {
-        float s;
-        success = getSpeed(s);
-        std::memcpy(&speed, &s, sizeof(float));
-    }
 };

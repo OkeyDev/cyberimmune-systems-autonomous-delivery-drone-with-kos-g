@@ -230,7 +230,7 @@ void getSensors() {
     uint8_t value;
     int mode, messageType, idx, latSign, lngSign;
     int32_t latitude, longitude, altitude;
-    char head[8], satsStr[8], dopStr[8], latStr[16], lngStr[16], speedStr[16], altStr[16];
+    char head[8], satsStr[8], dopStr[8], latStr[16], lngStr[16], altStr[16];
 
     while (true) {
         read = true;
@@ -258,10 +258,6 @@ void getSensors() {
                         mode = 2;
                         messageType = 1;
                     }
-                    else if ((head[2] == 'V') && (head[3] == 'T') && (head[4] == 'G')) {
-                        mode = 10;
-                        messageType = 2;
-                    }
                     else
                         mode = 0;
                     idx = 0;
@@ -273,12 +269,6 @@ void getSensors() {
                 break;
             case 2: //UTC time
             case 7: //Quality
-            case 10: //True heading
-            case 11: //True heading consistency
-            case 12: //Magnetic heading
-            case 13: //Magnetic heading consistency
-            case 14: //Speed 1
-            case 15: //Speed 1 units (knots)
                 if (value == ',')
                     mode++;
                 break;
@@ -359,14 +349,14 @@ void getSensors() {
                 else if (value == ',') {
                     dopStr[idx] = '\0';
                     idx = 0;
-                    mode = 17;
+                    mode = 10;
                 }
                 else {
                     dopStr[idx] = value;
                     idx++;
                 }
                 break;
-            case 17:
+            case 10:
                 if (idx >= 16) {
                     read = false;
                     messageType = 0;;
@@ -378,21 +368,6 @@ void getSensors() {
                 }
                 else {
                     altStr[idx] = value;
-                    idx++;
-                }
-                break;
-            case 16: //Speed 2 (km/h)
-                if (idx >= 16) {
-                    read = false;
-                    messageType = 0;
-                }
-                else if (value == ',') {
-                    speedStr[idx] = '\0';
-                    idx = 0;
-                    read = false;
-                }
-                else {
-                    speedStr[idx] = value;
                     idx++;
                 }
                 break;
@@ -415,8 +390,6 @@ void getSensors() {
 #endif
             setInfo(atof(dopStr), atoi(satsStr));
         }
-        else if (messageType == 2)
-            setSpeed(atof(speedStr) / 3.6f);
         else
             logEntry("Failed to parse NMEA string from GPS", ENTITY_NAME, LogLevel::LOG_WARNING);
     }
