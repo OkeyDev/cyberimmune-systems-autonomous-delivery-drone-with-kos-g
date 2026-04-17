@@ -158,12 +158,6 @@ int initPeripheryController() {
         logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
         return 0;
     }
-    rc = BspSetConfig(gpio, "rpi4_bcm2711.default");
-    if (rc != rcOk) {
-        snprintf(logBuffer, 256, "Failed to set BSP config for GPIO %s (" RETCODE_HR_FMT ")", gpio, RETCODE_HR_PARAMS(rc));
-        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
-        return 0;
-    }
     rc = GpioInit();
     if (rc != rcOk) {
         snprintf(logBuffer, 256, "Failed to initialize GPIO (" RETCODE_HR_FMT ")", RC_GET_CODE(rc));

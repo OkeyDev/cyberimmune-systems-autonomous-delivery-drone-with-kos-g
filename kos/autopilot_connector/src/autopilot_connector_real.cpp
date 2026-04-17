@@ -43,12 +43,6 @@ int initAutopilotConnector() {
         logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
         return 0;
     }
-    rc = BspSetConfig(autopilotUart, "rpi4_bcm2711.default");
-    if (rc != rcOk) {
-        snprintf(logBuffer, 256, "Failed to set BSP config for UART %s (" RETCODE_HR_FMT ")", autopilotUart, RETCODE_HR_PARAMS(rc));
-        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
-        return 0;
-    }
     rc = UartInit();
     if (rc != rcOk) {
         snprintf(logBuffer, 256, "Failed to initialize UART (" RETCODE_HR_FMT ")", RETCODE_HR_PARAMS(rc));

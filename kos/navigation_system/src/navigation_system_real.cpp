@@ -411,12 +411,6 @@ int initNavigationSystem() {
         logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
         return 0;
     }
-    rc = BspSetConfig(barometerI2C, "rpi4_bcm2711.p2-3");
-    if (rc != rcOk) {
-        snprintf(logBuffer, 256, "Failed to set BSP config for I2C %s (" RETCODE_HR_FMT ")", barometerI2C, RETCODE_HR_PARAMS(rc));
-        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
-        return 0;
-    }
     rc = I2cInit();
     if (rc != rcOk) {
         snprintf(logBuffer, 256, "Failed to initialize I2C (" RETCODE_HR_FMT ")", RETCODE_HR_PARAMS(rc));
@@ -428,12 +422,6 @@ int initNavigationSystem() {
     rc = BspEnableModule(gpsUart);
     if (rc != rcOk) {
         snprintf(logBuffer, 256, "Failed to enable UART %s (" RETCODE_HR_FMT ")", gpsUart, RETCODE_HR_PARAMS(rc));
-        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
-        return 0;
-    }
-    rc = BspSetConfig(gpsUart, "rpi4_bcm2711.default");
-    if (rc != rcOk) {
-        snprintf(logBuffer, 256, "Failed to set BSP config for UART %s (" RETCODE_HR_FMT ")", gpsUart, RETCODE_HR_PARAMS(rc));
         logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
         return 0;
     }
