@@ -35,8 +35,7 @@ def key_kos_exchange_handler(id: str, n: str, e: str):
     """
     n, e = str(int(n, 16)), str(int(e, 16))
     key_entity = get_entity_by_key(UavPublicKeys, id)
-    if key_entity is None:
-        save_public_key(n, e, f'kos{id}')
+    save_public_key(n, e, f'kos{id}')
     orvd_n, orvd_e = get_key('orvd', private=False)
     str_to_send = f'$Key: {hex(orvd_n)[2:]} {hex(orvd_e)[2:]}'
     return str_to_send
