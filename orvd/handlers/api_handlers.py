@@ -220,7 +220,7 @@ def change_forbidden_zones(lat: float, lon: float):
             mqtt_publish_forbidden_zones()
 
 def telemetry_handler(id: str, lat: float, lon: float, alt: float,
-                      azimuth: float, dop: float, sats: float, speed: float, **kwargs):
+                      azimuth: float, dop: float, sats: float, speed: float = 0, **kwargs):
     """
     Обрабатывает телеметрию БПЛА.
 
