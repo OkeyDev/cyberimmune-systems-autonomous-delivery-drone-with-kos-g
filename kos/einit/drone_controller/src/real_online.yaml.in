@@ -12,10 +12,10 @@ entities:
 
 - name: drone_controller.CredentialManager
   env:
-    VFS_FILESYSTEM_BACKEND: client:kl.VfsSdCardFs
+    VFS_FILESYSTEM_BACKEND: client:kl.VfsRamFs
   connections:
-  - target: kl.VfsSdCardFs
-    id: kl.VfsSdCardFs
+  - target: kl.VfsRamFs
+    id: kl.VfsRamFs
   - target: drone_controller.ServerConnector
     id: server_connector_connection
   - target: drone_controller.Logger
@@ -50,10 +50,10 @@ entities:
 
 - name: drone_controller.PeripheryController
   env:
-    VFS_FILESYSTEM_BACKEND: client:kl.VfsSdCardFs
+    VFS_FILESYSTEM_BACKEND: client:kl.VfsRamFs
   connections:
-  - target: kl.VfsSdCardFs
-    id: kl.VfsSdCardFs
+  - target: kl.VfsRamFs
+    id: kl.VfsRamFs
   - target: drone_controller.Logger
     id: logger_connection
   - target: drone_controller.ServerConnector
@@ -75,13 +75,13 @@ entities:
 
 - name: drone_controller.Logger
   env:
-    VFS_FILESYSTEM_BACKEND: client:kl.VfsSdCardFs
+    VFS_FILESYSTEM_BACKEND: client:kl.VfsRamFs
     LOGRR_LOG_PROVIDER_STATIC_CONN_ID: LogrrServerLogProvider
     LOGRR_SERVER_NAME: logrr.LogrrServer
     LOGRR_LOG_PROVIDER_DENY_DYNAMIC_CONN: 'OFF'
   connections:
-  - target: kl.VfsSdCardFs
-    id: kl.VfsSdCardFs
+  - target: kl.VfsRamFs
+    id: kl.VfsRamFs
   - target: drone_controller.ServerConnector
     id: server_connector_connection
 @INIT_Logger_ENTITY_CONNECTIONS@
@@ -89,13 +89,13 @@ entities:
 - name: kl.Ntpd
   path: ntpd
   env:
-    VFS_FILESYSTEM_BACKEND: client:kl.VfsSdCardFs
+    VFS_FILESYSTEM_BACKEND: client:kl.VfsRamFs
     VFS_NETWORK_BACKEND: client:kl.VfsNet
   connections:
   - target: kl.VfsNet
     id: kl.VfsNet
-  - target: kl.VfsSdCardFs
-    id: kl.VfsSdCardFs
+  - target: kl.VfsRamFs
+    id: kl.VfsRamFs
 @INIT_ntpd_ENTITY_CONNECTIONS+@
 
 @INIT_EXTERNAL_ENTITIES@

@@ -18,7 +18,7 @@ request {
         match src=drone_controller.PeripheryController { grant () }
         match src=drone_controller.ServerConnector { grant () }
         match src=drone_controller.Logger { grant () }
-        match src=kl.VfsSdCardFs { grant () }
+        match src=kl.VfsRamFs { grant () }
         match src=kl.VfsNet { grant () }
         match src=kl.EntropyEntity { grant () }
         match src=kl.drivers.SDCard { grant () }
@@ -30,7 +30,7 @@ request {
         match src=drone_controller.PeripheryController { grant () }
         match src=drone_controller.ServerConnector { grant() }
     }
-    match dst=kl.VfsSdCardFs {
+    match dst=kl.VfsRamFs {
         match src=kl.rump.Dhcpcd { grant () }
         match src=drone_controller.AutopilotConnector { grant () }
         match src=drone_controller.CredentialManager { grant () }
@@ -56,7 +56,7 @@ response {
         match dst=drone_controller.PeripheryController { grant () }
         match dst=drone_controller.ServerConnector { grant () }
         match dst=drone_controller.Logger { grant () }
-        match dst=kl.VfsSdCardFs { grant () }
+        match dst=kl.VfsRamFs { grant () }
         match dst=kl.VfsNet { grant () }
         match dst=kl.EntropyEntity { grant () }
         match dst=kl.drivers.SDCard { grant () }
@@ -69,7 +69,7 @@ response {
         match dst=drone_controller.PeripheryController { grant () }
         match dst=drone_controller.ServerConnector { grant() }
     }
-    match src=kl.VfsSdCardFs {
+    match src=kl.VfsRamFs {
         match dst=kl.rump.Dhcpcd { grant () }
         match dst=kl.drivers.SDCard { grant () }
         match dst=drone_controller.AutopilotConnector { grant () }
