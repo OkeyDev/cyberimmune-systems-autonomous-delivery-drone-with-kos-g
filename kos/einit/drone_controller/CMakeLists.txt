@@ -73,7 +73,7 @@ set (DHCPCD_ENV "
 set (DHCPCD_ARGS "\
     - '-4'
     - '-f'
-    - /resources/hdd/etc/dhcpcd.conf")
+    - /etc/dhcpcd.conf")
 
 if (SIMULATION OR SERVER)
     set_target_properties (precompiled_vfs::VfsNet PROPERTIES

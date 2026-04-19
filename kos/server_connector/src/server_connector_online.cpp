@@ -25,6 +25,7 @@
 #define BUFFER_SIZE 1024
 #define CONTENT_SIZE 4096
 #define CONNECTION_TIMEOUT 5
+#define WLAN_INTERFACE "wl0"
 
 uint16_t serverPort = 8080;
 uint16_t publishPort = 1883;
@@ -85,7 +86,7 @@ int setMacId() {
 }
 
 int initServerConnector() {
-    if (!wait_for_iface(DEFAULT_INTERFACE, IWF_EXISTS, DEFAULT_TIMEOUT) || !configure_net_iface(DEFAULT_INTERFACE, DEFAULT_ADDR, DEFAULT_MASK, DEFAULT_GATEWAY, DEFAULT_MTU)) {
+    if (!wait_for_iface(WLAN_INTERFACE, IWF_IP4, DEFAULT_TIMEOUT)) {
         logEntry("Connection to network has failed", ENTITY_NAME, LogLevel::LOG_ERROR);
         return 0;
     }
