@@ -37,6 +37,7 @@ set (ENTITIES
         PeripheryController
         ServerConnector
         Logger
+        precompiled_vfs::VfsRamFs
         precompiled_vfs::VfsNet
         ${NTPD_ENTITY}
         KlogStorageEntity
