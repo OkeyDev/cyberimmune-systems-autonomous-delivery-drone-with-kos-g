@@ -35,7 +35,7 @@ request {
     match dst=kl.drivers.USB {
         match src=drone_controller.PeripheryController { grant () }
     }
-    match dst=kl.VfsSdCardFs {
+    match dst=kl.VfsRamFs {
         match src=drone_controller.CredentialManager { grant () }
         match src=drone_controller.Logger { grant () }
         match src=drone_controller.PeripheryController { grant () }
@@ -74,7 +74,7 @@ response {
     match src=kl.drivers.USB {
         match dst=drone_controller.PeripheryController { grant () }
     }
-    match src=kl.VfsSdCardFs {
+    match src=kl.VfsRamFs {
         match dst=drone_controller.CredentialManager { grant () }
         match dst=drone_controller.Logger { grant () }
         match dst=drone_controller.PeripheryController { grant () }

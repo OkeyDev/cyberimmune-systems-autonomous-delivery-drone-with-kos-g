@@ -51,8 +51,11 @@ docker-image-ntp-server: ## Сборка образа docker с NTP сервер
 docker-image-recognizer: ## Сборка образа docker с recognizer
 	docker build -t recognizer ./recognizer
 
+docker-build-image-deliverer-offline: ## Сборка kos-image для deliverer
+	docker run --rm --user user -v `pwd`:/mnt -ti simulator-rpi:latest /bin/bash -c "cd mnt/kos; ./cross-build.sh --target hardware --mode offline --alt lns --role deliverer --coords lns --partner-id NULL"
+
 docker-build-image-deliverer: ## Сборка kos-image для deliverer
-	docker run --rm --user user -v `pwd`:/mnt -ti simulator-rpi:latest /bin/bash -c "cd mnt/kos; ./cross-build.sh --target hardware --mode online --alt lns --role deliverer --coords lns"
+	docker run --rm --user user -v `pwd`:/mnt -ti simulator-rpi:latest /bin/bash -c "cd mnt/kos; ./cross-build.sh --target hardware --mode online --alt lns --role deliverer --coords lns --partner-id NULL"
 
 docker-build-image-deliverer-with-sd-image: ## Сборка kos-image для deliverer с hdd.img образом для sd карты
 	docker run --rm --user user -v `pwd`:/mnt -ti simulator-rpi:latest /bin/bash -c "cd mnt/kos; ./cross-build.sh --target hardware-with-image --mode online --alt lns --role deliverer --coords lns"
