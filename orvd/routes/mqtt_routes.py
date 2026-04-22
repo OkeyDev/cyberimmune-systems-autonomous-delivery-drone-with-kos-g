@@ -1,7 +1,7 @@
 import json
 from urllib.parse import parse_qs
 from context import context
-from constants import MQTTTopic, APIRoute, KeyGroup
+from constants import MQTTTopic, APIRoute, KeyGroup, OK
 from extensions import mqtt_client as mqtt
 from utils import verify, sign, signed_request
 from handlers.general_handlers import fmission_ms_handler
@@ -58,6 +58,8 @@ def arm_request(client, userdata, msg, **kwargs):
         if not context.flight_info_response:
             return
         if len(response) == 2 and response[1] == 200:
+            if response[0].startswith(OK):
+                return
             mqtt.publish_message(MQTTTopic.ARM_RESPONSE.format(id=id), response[0])
     except Exception as e:
         print(f"Error handling mission message: {e}")
@@ -98,6 +100,8 @@ def revise_mission(client, userdata, msg, **kwargs):
         if not context.flight_info_response:
             return
         if len(response) == 2 and response[1] == 200:
+            if response[0].startswith(OK):
+                return
             mqtt.publish_message(MQTTTopic.NMISSION_RESPONSE.format(id=id), response[0])
     except Exception as e:
         print(f"Error handling mission message: {e}")

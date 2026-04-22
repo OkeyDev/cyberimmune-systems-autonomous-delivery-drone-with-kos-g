@@ -119,43 +119,18 @@ def arm_handler(id: str, **kwargs):
     if not uav_entity:
         return NOT_FOUND
     elif uav_entity.is_armed:
-        return f'$Arm {ARMED}$Delay {uav_entity.delay}' 
+        return f'$Arm {ARMED}$Delay {uav_entity.delay}'
     else:
         mission = get_entity_by_key(Mission, id)
         if mission and mission.is_accepted:
             context.arm_queue.add(id)
             uav_entity.state = 'Ожидает'
             commit_changes()
-            decision = _arm_wait_decision(id)
-            if decision == ARMED:
-                uav_entity.state = 'В полете'
-            else:
-                uav_entity.state = 'В сети'
-            commit_changes()
             flush()
             mqtt_publish_flight_state(id)
-            return f'$Arm {decision}$Delay {uav_entity.delay}'
+            return OK
         else:
             return f'$Arm {DISARMED}$Delay {uav_entity.delay}'
-
-
-def _arm_wait_decision(id: str):
-    """
-    Ожидает решения об арме БПЛА.
-
-    Args:
-        id (str): Идентификатор БПЛА.
-
-    Returns:
-        str: Решение об арме (ARMED или DISARMED).
-    """
-    while id in context.arm_queue:
-        time.sleep(0.1)
-    uav_entity = get_entity_by_key(Uav, id)
-    if uav_entity.is_armed:
-        return ARMED
-    else:
-        return DISARMED
 
 
 def flight_info_handler(id: str) -> str:
@@ -414,16 +389,7 @@ def revise_mission_handler(id: str, mission: str, **kwargs):
         mqtt_publish_flight_state(id)
         
     context.revise_mission_queue.add(id)
-    while id in context.revise_mission_queue:
-        time.sleep(0.1)
-        
-    mission_entity = get_entity_by_key(Mission, id)
-    if mission_entity:
-        if mission_entity.is_accepted:
-            return '$Approve 0'
-        else:
-            return '$Approve 1'
-    return '$Approve 1'
+    return OK
 
 
 def save_logs_handler(id: str, log: str, **kwargs):

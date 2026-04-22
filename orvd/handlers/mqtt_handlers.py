@@ -73,6 +73,19 @@ def mqtt_publish_connection_status(*args, **kwargs):
     message = str(context.flight_info_response)
     mqtt.publish_message(MQTTTopic.CONNECTION_STATUS, message)
 
+def mqtt_publish_arm_response(id: str, decision: int):
+    uav_entity = get_entity_by_key(Uav, id)
+    if not uav_entity:
+        return
+    message = f'$Arm {decision}$Delay {uav_entity.delay}'
+    signed_message = f'{message}#{hex(sign(message, KeyGroup.ORVD))[2:]}'
+    mqtt.publish_message(MQTTTopic.ARM_RESPONSE.format(id=id), signed_message)
+
+def mqtt_publish_mission_approval(id: str, decision: int):
+    message = f'$Approve {decision}'
+    signed_message = f'{message}#{hex(sign(message, KeyGroup.ORVD))[2:]}'
+    mqtt.publish_message(MQTTTopic.NMISSION_RESPONSE.format(id=id), signed_message)
+
 def tag_handler(id: str, tag: str, **kwargs):
     """
     Обрабатывает тег от БПЛА.

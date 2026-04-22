@@ -4,7 +4,7 @@ from context import context
 from extensions import task_scheduler_client as scheduler
 from db.models import User, UavTelemetry, Mission, MissionStep, Uav
 from constants import (
-    ARMED, NOT_FOUND, OK, FORBIDDEN_ZONES_PATH,
+    ARMED, DISARMED, NOT_FOUND, OK, FORBIDDEN_ZONES_PATH,
     MISSION_ACCEPTED, MISSION_NOT_ACCEPTED
 )
 from db.dao import (
@@ -14,7 +14,8 @@ from utils import (
     get_sha256_hex, get_new_polygon_feature, compute_and_save_forbidden_zones_delta
 )
 from .mqtt_handlers import (
-    mqtt_publish_flight_state, mqtt_publish_forbidden_zones, mqtt_publish_ping, mqtt_send_mission, mqtt_publish_connection_status
+    mqtt_publish_flight_state, mqtt_publish_forbidden_zones, mqtt_publish_ping, mqtt_send_mission, mqtt_publish_connection_status,
+    mqtt_publish_arm_response, mqtt_publish_mission_approval
 )
 
 
@@ -56,8 +57,11 @@ def arm_decision_handler(id: str, decision: int):
         return NOT_FOUND
     elif id in context.arm_queue:
         uav_entity.is_armed = True if decision == ARMED else False
+        uav_entity.state = 'В полете' if decision == ARMED else 'В сети'
         commit_changes()
         context.arm_queue.remove(id)
+        mqtt_publish_arm_response(id, decision)
+        mqtt_publish_flight_state(id)
         return f'$Arm: {decision}'
     else:
         return '$Arm: -1'
@@ -272,7 +276,7 @@ def change_fly_accept_handler(id: str, decision: int):
     uav_entity = get_entity_by_key(Uav, id)
     if uav_entity:
         if decision == 0:
-            uav_entity.is_armed = True 
+            uav_entity.is_armed = True
             uav_entity.state = 'В полете'
         else:
             uav_entity.is_armed = False
@@ -280,6 +284,9 @@ def change_fly_accept_handler(id: str, decision: int):
         commit_changes()
         flush()
         mqtt_publish_flight_state(id)
+        if id in context.arm_queue:
+            mqtt_publish_arm_response(id, decision)
+            context.arm_queue.remove(id)
         return OK
     return NOT_FOUND
 
@@ -478,6 +485,7 @@ def revise_mission_decision_handler(id: str, decision: int):
             mission_entity.is_accepted = False
             commit_changes()
             flush()
+        mqtt_publish_mission_approval(id, decision)
         mqtt_publish_flight_state(id)
         context.revise_mission_queue.remove(id)
         return f'$Arm: {decision}'

@@ -1,6 +1,5 @@
 import logging
 import asyncio
-from urllib.parse import parse_qs
 from aiomqtt import Client, Message
 from src.recognizers.base import BaseRecognizer
 from src.core.config import settings
@@ -55,11 +54,11 @@ class MQTTHandler:
             
             id_ = topic_parts[-1]
             
-            # Parse query string payload: image={base64_image}
             payload = message.payload.decode("utf-8")
-            parsed = parse_qs(payload)
             
-            image_base64 = parsed.get("image", [None])[0]
+            image_base64 = None
+            if payload.startswith("image="):
+                image_base64 = payload[len("image="):]
             
             if not image_base64:
                 logger.warning(f"Received message without image data. ID: {id_}")
