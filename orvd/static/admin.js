@@ -439,11 +439,11 @@ async function toggle_display_mode() {
   const query_str = `admin/toggle_display_mode?token=${access_token}`;
   await fetch(query_str);
   const $monitoringCheckbox = document.getElementById('monitoring-checkbox')
-  const $mainButtons = document.getElementById('main-buttons');
+  const $controlPanel = document.getElementById('control-panel');
   if($monitoringCheckbox.checked) {
-    $mainButtons.style.visibility = 'hidden';
+    $controlPanel.style.visibility = 'hidden';
   } else {
-    $mainButtons.style.visibility = 'visible';
+    $controlPanel.style.visibility = 'visible';
   }
 }
 
@@ -761,13 +761,13 @@ async function getAllData() {
         }
 
         const $monitoringCheckbox = document.getElementById('monitoring-checkbox')
-        const $mainButtons = document.getElementById('main-buttons');
+        const $controlPanel = document.getElementById('control-panel');
         if (data.display_mode === '0') {
             $monitoringCheckbox.checked = true;
-            $mainButtons.style.visibility = 'hidden';
+            $controlPanel.style.visibility = 'hidden';
         } else {
             $monitoringCheckbox.checked = false;
-            $mainButtons.style.visibility = 'visible';
+            $controlPanel.style.visibility = 'visible';
         }
 
         const $flightInfoCheckbox = document.getElementById('flight-info-checkbox')

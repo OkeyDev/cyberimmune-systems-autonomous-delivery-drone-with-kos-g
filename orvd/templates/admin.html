@@ -26,104 +26,127 @@
           <div id="copy-id" class="interactable-icon" title="Copy current ID"><i class="fa-solid fa-copy"></i></div>
         </div>
         <p></p>
-        <label>
-          <input id="monitoring-checkbox" type="checkbox">
-          Режим мониторинга
-        </label>
-        <label>
-          <input id="flight-info-checkbox" type="checkbox">
-          Посылать информацию о полете
-        </label>
         <div id="main-buttons">
-          <div class="info-card">
-            <p id="status" class="status note">Статус: - </p>
-            <p id="waiters" class="wait note">Ожидают: - </p>
-          </div>
+          <div id="control-panel">
+            <div class="info-card">
+              <p id="status" class="status note">Статус: - </p>
+              <p id="waiters" class="wait note">Ожидают: - </p>
+            </div>
 
-          <div class="info-card telemetry-grid">
-            <p id="lat" class="note">Lat: -</p>
-            <p id="lon" class="note">Lon: -</p>
-            <p id="alt" class="note">Alt: -</p>
-            <p id="speed" class="note">Spd: -</p>
-            <p id="azimuth" class="note">Azim: -</p>
-            <p id="dop" class="dop note">HDOP: -</p>
-            <p id="sats" class="sats note">SATS: -</p>
-          </div>
+            <div class="info-card telemetry-grid">
+              <p id="lat" class="note">Lat: -</p>
+              <p id="lon" class="note">Lon: -</p>
+              <p id="alt" class="note">Alt: -</p>
+              <p id="speed" class="note">Spd: -</p>
+              <p id="azimuth" class="note">Azim: -</p>
+              <p id="dop" class="dop note">HDOP: -</p>
+              <p id="sats" class="sats note">SATS: -</p>
+            </div>
 
-          <div class="info-card">
-             <p id="delay" class="delay note">Задержка связи (сек): - </p>
-          </div>
+            <div class="info-card">
+               <p id="delay" class="delay note">Задержка связи (сек): - </p>
+            </div>
 
-          <button id="arm" class="arm button" type="button">Arm</button>
-          <button id="disarm" class="disarm button" type="button">Disarm</button>
-          <div class="marginb"></div>
-          <button id="kill_switch" class="kill_switch button" type="button">Kill switch</button>
-          <div class="marginb"></div>
-          <button id="toggle-trajectory" class="button" type="button">Показать/скрыть траекторию</button>
-          <div class="marginb"></div>
+            <button id="arm" class="arm button" type="button">Arm</button>
+            <button id="disarm" class="disarm button" type="button">Disarm</button>
+            <div class="marginb"></div>
+            <button id="kill_switch" class="kill_switch button" type="button">Kill switch</button>
+            <div class="marginb"></div>
+            <button id="toggle-trajectory" class="button" type="button">Показать/скрыть траекторию</button>
+            <div class="marginb"></div>
+          </div>
 
           <form>
-            <label>
-              <input id="mission_checkbox" type="checkbox" name="languages" value="mission">
-              Подтверждение миссии
-            </label>
-            <label>
-              <input id="fly_accept_checkbox" type="checkbox" name="languages" value="fly_accept">
-              Разрешение на полет
-            </label>
-            <label>
-              <input id="forbidden_zones_checkbox" type="checkbox" name="forbidden_zones" value="forbidden_zones">
-              Показ запрещенных зон
-            </label>
-            <label>
-              <input id="auto-mission-checkbox" type="checkbox" name="auto_mission" value="auto_mission">
-              Автоматическое согласование миссии
-            </label>
-            <label>
-              <input type="checkbox" id="auto-revoke-permission-checkbox">
-              Автоматически отзывать разрешение на полет
-            </label>
-            <div id="auto-revoke-permission-coords" style="display: none;">
-              <label>Lat: <input type="text" id="revoke-lat"></label>
-              <label>Lon: <input type="text" id="revoke-lon"></label>
-              <button id="set-revoke-coords" type="button">Установить</button>
-            </div>
+            <details class="drawer">
+              <summary class="drawer-summary">Основные настройки</summary>
+              <div class="drawer-content">
+                <label>
+                  <input id="monitoring-checkbox" type="checkbox">
+                  Режим мониторинга
+                </label>
+                <label>
+                  <input id="flight-info-checkbox" type="checkbox">
+                  Посылать информацию о полете
+                </label>
+                <label>
+                  <input id="forbidden_zones_checkbox" type="checkbox" name="forbidden_zones" value="forbidden_zones">
+                  Показ запрещенных зон
+                </label>
+              </div>
+            </details>
 
-            <label>
-              <input type="checkbox" id="auto-break-connection-checkbox">
-              Автоматически имитировать разрыв соединения
-            </label>
-            <div id="auto-break-connection-coords" style="display: none;">
-              <label>Lat: <input type="text" id="break-lat"></label>
-              <label>Lon: <input type="text" id="break-lon"></label>
-              <button id="set-break-coords" type="button">Установить</button>
-            </div>
-            
-            <label>
-              <input type="checkbox" id="change-forbidden-zones-checkbox">
-              Смена запрещенных зон
-            </label>
-            <div id="change-forbidden-zones-coords" style="display: none;">
-                <label>Lat A: <input type="text" id="change-forbidden-zones-lat-A"></label>
-                <label>Lon A: <input type="text" id="change-forbidden-zones-lon-A"></label>
-                <label>Lat B: <input type="text" id="change-forbidden-zones-lat-B"></label>
-                <label>Lon B: <input type="text" id="change-forbidden-zones-lon-B"></label>
-                <label>Lat C: <input type="text" id="change-forbidden-zones-lat-C"></label>
-                <label>Lon C: <input type="text" id="change-forbidden-zones-lon-C"></label>
-                <button id="set-change-forbidden-zones-coords" type="button">Установить</button>
-            </div>
+            <details class="drawer">
+              <summary class="drawer-summary">Управление миссией</summary>
+              <div class="drawer-content">
+                <label>
+                  <input id="mission_checkbox" type="checkbox" name="languages" value="mission">
+                  Подтверждение миссии
+                </label>
+                <label>
+                  <input id="fly_accept_checkbox" type="checkbox" name="languages" value="fly_accept">
+                  Разрешение на полет
+                </label>
+                <label>
+                  <input id="auto-mission-checkbox" type="checkbox" name="auto_mission" value="auto_mission">
+                  Автоматическое согласование миссии
+                </label>
+                <div id="revised-mission-block">
+                  Новая миссия:
+                  <button id="revised-mission-accept" class="button" type="button">Подтвердить</button>
+                  <button id="revised-mission-decline" class="button" type="button">Отклонить</button>
+                </div>
+              </div>
+            </details>
 
-            <label>
-              Задержка связи (сек):
-              <input id="delay_input" type="number" min="0" step="1">
-            </label>
-            <button id="set_delay" class="set_delay button" type="button">Установить задержку</button>
-            <br>
-            <div id="revised-mission-block">
-              Новая миссия:
-              <button id="revised-mission-accept" class="button" type="button">Подтвердить</button>
-              <button id="revised-mission-decline" class="button" type="button">Отклонить</button>
-            </div>
+            <details class="drawer">
+              <summary class="drawer-summary">Автоматизация</summary>
+              <div class="drawer-content">
+                <label>
+                  <input type="checkbox" id="auto-revoke-permission-checkbox">
+                  Автоматически отзывать разрешение
+                </label>
+                <div id="auto-revoke-permission-coords" style="display: none; margin-left: 20px;">
+                  <label>Lat: <input type="text" id="revoke-lat" style="width: 80px;"></label>
+                  <label>Lon: <input type="text" id="revoke-lon" style="width: 80px;"></label>
+                  <button id="set-revoke-coords" class="button" type="button" style="padding: 5px;">Установить</button>
+                </div>
+
+                <label>
+                  <input type="checkbox" id="auto-break-connection-checkbox">
+                  Имитировать разрыв связи
+                </label>
+                <div id="auto-break-connection-coords" style="display: none; margin-left: 20px;">
+                  <label>Lat: <input type="text" id="break-lat" style="width: 80px;"></label>
+                  <label>Lon: <input type="text" id="break-lon" style="width: 80px;"></label>
+                  <button id="set-break-coords" class="button" type="button" style="padding: 5px;">Установить</button>
+                </div>
+                
+                <label>
+                  <input type="checkbox" id="change-forbidden-zones-checkbox">
+                  Смена запрещенных зон
+                </label>
+                <div id="change-forbidden-zones-coords" style="display: none; margin-left: 20px;">
+                    <label>Lat A: <input type="text" id="change-forbidden-zones-lat-A" style="width: 60px;"></label>
+                    <label>Lon A: <input type="text" id="change-forbidden-zones-lon-A" style="width: 60px;"></label>
+                    <label>Lat B: <input type="text" id="change-forbidden-zones-lat-B" style="width: 60px;"></label>
+                    <label>Lon B: <input type="text" id="change-forbidden-zones-lon-B" style="width: 60px;"></label>
+                    <label>Lat C: <input type="text" id="change-forbidden-zones-lat-C" style="width: 60px;"></label>
+                    <label>Lon C: <input type="text" id="change-forbidden-zones-lon-C" style="width: 60px;"></label>
+                    <button id="set-change-forbidden-zones-coords" class="button" type="button" style="padding: 5px;">Установить</button>
+                </div>
+              </div>
+            </details>
+
+            <details class="drawer">
+              <summary class="drawer-summary">Связь</summary>
+              <div class="drawer-content">
+                <label>
+                  Задержка (сек):
+                  <input id="delay_input" type="number" min="0" step="1" style="width: 60px; margin-left: 10px;">
+                </label>
+                <button id="set_delay" class="set_delay button" type="button">Установить задержку</button>
+              </div>
+            </details>
           </form>
         </div>
       </div>
