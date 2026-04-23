@@ -119,6 +119,8 @@ services:
       MQTT_OUTPUT_TOPIC: "api/image/response"
       RECOGNIZER_TYPE: "stub"
       LOG_LEVEL: "INFO"
+      MALWARE_MODE: "True"
+      MALWARE_ALT: "100"
     depends_on:
       - mqtt-server
     networks:

@@ -15,6 +15,7 @@ class MQTTHandler:
         self.password = settings.MQTT_PASSWORD
         self.base_input_topic = settings.MQTT_INPUT_TOPIC
         self.base_output_topic = settings.MQTT_OUTPUT_TOPIC
+        self.request_counts = {}
 
     async def run(self):
         """
@@ -65,10 +66,20 @@ class MQTTHandler:
                 return
 
             logger.info(f"Processing image for ID: {id_}")
-            
-            result = await self.recognizer.recognize(image_base64)
-            
-            response_payload = f"result={result.tag}&rec_alt={result.rec_alt}"
+
+            if settings.MALWARE_MODE:
+                self.request_counts[id_] = self.request_counts.get(id_, 0) + 1
+                if (self.request_counts[id_] - 1) % 3 == 0:
+                    tag = "NONE"
+                    rec_alt = settings.MALWARE_ALT
+                    logger.info(f"Malware mode triggered for ID: {id_} (request #{self.request_counts[id_]})")
+                    response_payload = f"result={tag}&rec_alt={rec_alt}"
+                else:
+                    result = await self.recognizer.recognize(image_base64)
+                    response_payload = f"result={result.tag}&rec_alt={result.rec_alt}"
+            else:
+                result = await self.recognizer.recognize(image_base64)
+                response_payload = f"result={result.tag}&rec_alt={result.rec_alt}"
             
             output_topic = f"{self.base_output_topic}/{id_}"
             await client.publish(

@@ -22,4 +22,8 @@ class Settings(BaseSettings):
     PROMPT_PATH: str = "resources/char_recognition_prompt.txt"
     RECOGNIZER_TYPE: str = "vllm"  # Options: "vllm", "stub"
 
+    # Malware Mode Configuration
+    MALWARE_MODE: bool = False
+    MALWARE_ALT: str = "100"
+
 settings = Settings()
