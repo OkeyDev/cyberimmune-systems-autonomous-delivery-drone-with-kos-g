@@ -1,5 +1,6 @@
 const TILES_URL = "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}";
 const TILES_LOCAL_PATH = "static/resources/tiles";
+const TRANSPARENT_TILE = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
 function getSearchParameters() {
   var prmstr = window.location.search.substr(1);
@@ -175,17 +176,34 @@ await fetch('/tiles/index')
 function customTileLoadFunction(imageTile, src) {
   const urlPattern = /x=([0-9]+)&y=([0-9]+)&z=([0-9]+)/;
   const matches = src.match(urlPattern);
+  
+  if (!matches) {
+    imageTile.getImage().src = src;
+    return;
+  }
+
   const x = matches[1];
   const y = matches[2];
   const z = matches[3];
   
   const tilePath = `${z}/${x}/${y}`;
   const localUrl = `${TILES_LOCAL_PATH}/${tilePath}.png`;
+  const image = imageTile.getImage();
   
   if (availableTiles.includes(tilePath)) {
-    imageTile.getImage().src = localUrl;
+    image.src = localUrl;
+  } else if (!navigator.onLine) {
+    image.src = TRANSPARENT_TILE;
   } else {
-    imageTile.getImage().src = src;
+    image.src = src;
+    const timeout = setTimeout(() => {
+      if (!image.complete) {
+        image.src = TRANSPARENT_TILE;
+      }
+    }, 3000);
+    const clr = () => clearTimeout(timeout);
+    image.addEventListener('load', clr, { once: true });
+    image.addEventListener('error', clr, { once: true });
   }
 }
 
