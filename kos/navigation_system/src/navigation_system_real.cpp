@@ -237,6 +237,8 @@ void getSensors() {
         messageType = 0;
         mode = 0;
         idx = 0;
+        latSign = 0;
+        lngSign = 0;
 
         while (read) {
             Retcode rc = UartReadByte(gpsUartHandler, &value);
@@ -375,20 +377,28 @@ void getSensors() {
         }
 
         if (messageType == 1) {
-            longitude = round(10000000 * atof(lngStr + 3) / 60.0f);
-            latitude = round(10000000 * atof(latStr + 2) / 60.0f);
-            lngStr[3] = '\0';
-            latStr[2] = '\0';
-            longitude += 10000000 * atoi(lngStr);
-            latitude += 10000000 * atoi(latStr);
-
-            setCoords(latitude * latSign, longitude * lngSign);
+            if ((strlen(lngStr) >= 5) && (strlen(latStr) >= 4) && lngSign && latSign) {
+                longitude = round(10000000 * atof(lngStr + 3) / 60.0f);
+                latitude = round(10000000 * atof(latStr + 2) / 60.0f);
+                lngStr[3] = '\0';
+                latStr[2] = '\0';
+                longitude += 10000000 * atoi(lngStr);
+                latitude += 10000000 * atoi(latStr);
+                setCoords(latitude * latSign, longitude * lngSign);
+            }
+            else
+                logEntry("Failed to parse NMEA coordinates from GPS", ENTITY_NAME, LogLevel::LOG_WARNING);
 
 #if ALT_SRC == 2
-            altitude = round(atof(altStr) * 100);
-            setAltitude(altitude);
+            if (strlen(altStr)) {
+                altitude = round(atof(altStr) * 100);
+                setAltitude(altitude);
+            }
+            else
+                logEntry("Failed to parse NMEA altitude from GPS", ENTITY_NAME, LogLevel::LOG_WARNING);
 #endif
-            setInfo(atof(dopStr), atoi(satsStr));
+            if (strlen(dopStr) && strlen(satsStr))
+                setInfo(atof(dopStr), atoi(satsStr));
         }
         else
             logEntry("Failed to parse NMEA string from GPS", ENTITY_NAME, LogLevel::LOG_WARNING);
