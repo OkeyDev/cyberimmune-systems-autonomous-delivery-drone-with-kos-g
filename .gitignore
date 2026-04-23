@@ -64,3 +64,5 @@ terrain
 
 # generated ntp.conf from ntp.conf.in
 ntp.conf
+
+*.pyc
