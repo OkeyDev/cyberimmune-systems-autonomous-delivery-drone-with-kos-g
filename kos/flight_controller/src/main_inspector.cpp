@@ -465,11 +465,9 @@ int main(void) {
 
   while (true) {
     // :(
+    // lost media
     // updateCurrentWaypointMQTT();
-    updateCurrentWaypoint();
-    handleAltiduteChange();
-
-    handleSpeedChange();
+    updateDroneDefendSystem();
 
     int32_t laltitude, longtitude, altitude;
     int result = getCoords(laltitude, longtitude, altitude);

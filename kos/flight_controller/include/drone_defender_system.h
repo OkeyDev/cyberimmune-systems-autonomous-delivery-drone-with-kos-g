@@ -17,8 +17,10 @@
 #include <unistd.h>
 
 void setLogEntryName(char* logEntryName);
-void updateCurrentWaypoint();
+/*void updateCurrentWaypoint();
 void handleAltiduteChange();
-void handleSpeedChange();
+void handleSpeedChange();*/
+
+void updateDroneDefendSystem();
 
 #endif
