@@ -469,6 +469,8 @@ int main(void) {
     updateCurrentWaypoint();
     handleAltiduteChange();
 
+    handleSpeedChange();
+
     int32_t laltitude, longtitude, altitude;
     int result = getCoords(laltitude, longtitude, altitude);
 

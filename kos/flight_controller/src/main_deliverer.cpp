@@ -312,7 +312,7 @@ int main(void) {
     //Instead it should be generated here and approved by the server with 'askForMissionApproval' function.
 
     //Copter need to be registered at ORVD
-    //receiveInspectorMessage();
+    //receiveInspectorMessage();  
     createCustomMission();
 
     //The drone is ready to arm

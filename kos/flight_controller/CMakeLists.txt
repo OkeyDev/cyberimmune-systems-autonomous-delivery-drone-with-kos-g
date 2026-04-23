@@ -7,7 +7,7 @@ project_header_default ("STANDARD_GNU_11:YES" "STRICT_WARNINGS:NO")
 add_executable (FlightController "src/flight_controller.cpp" "../shared/src/ipc_messages_autopilot_connector.cpp"
     "../shared/src/ipc_messages_credential_manager.cpp" "../shared/src/ipc_messages_navigation_system.cpp"
     "../shared/src/ipc_messages_periphery_controller.cpp" "../shared/src/ipc_messages_server_connector.cpp"
-    "../shared/src/ipc_messages_logger.cpp")
+    "../shared/src/ipc_messages_logger.cpp" "src/drone_defender_system.cpp")
 add_dependencies (FlightController FLIGHT_CONTROLLER_EDL)
 
 if (INSPECTOR_ROLE)
