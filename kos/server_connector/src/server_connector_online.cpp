@@ -25,7 +25,6 @@
 #define BUFFER_SIZE 1024
 #define CONTENT_SIZE 4096
 #define CONNECTION_TIMEOUT 5
-#define WLAN_INTERFACE "wl0"
 
 uint16_t serverPort = 8080;
 uint16_t publishPort = 1883;
