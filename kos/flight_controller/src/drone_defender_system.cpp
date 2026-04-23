@@ -13,8 +13,6 @@ MissionCommand *lastWaypoint;
 bool ended = false;
 int32_t targetAltidute = 0;
 
-MissionCommand* targetInterestPoint;
-
 int32_t lastCoordX = 0;
 int32_t lastCoordY = 0;
 
@@ -62,7 +60,7 @@ static float dotProduct(float x1, float y1, float x2, float y2) {
 
 bool isDroneInRestrictedZone() {
   // TODO: Implement
-  
+
   int count = 0;
   auto noFlightAreas = getNoFlightAreas(count);
 
@@ -102,6 +100,7 @@ void handleIncorrectMovement() {
     // remembers current position
     lastCoordX = laltitude;
     lastCoordY = longtitude;
+    return;
   }
 
   float waypointDirX =
@@ -125,9 +124,6 @@ void handleIncorrectMovement() {
     logEntry(message, globalEntityName, LogLevel::LOG_WARNING);
 
     changeWaypoint(content.latitude, content.longitude, content.altitude);
-
-    lastCoordX = laltitude;
-    lastCoordY = longtitude;
   }
 }
 
@@ -152,7 +148,7 @@ void setNextWaypoint(MissionCommand *commands, int count, int start = 0) {
   }
 
   // Mission ended
-  if (targetWaypoint == prevWaypoint) {
+  if(targetWaypoint == prevWaypoint) {
     targetWaypointIndex = -1;
     lastWaypoint = nullptr;
     targetWaypoint = nullptr;
@@ -250,7 +246,14 @@ void handleSpeedChange()
     return;
   }
 
-  if (targetWaypoint == nullptr || lastWaypoint == nullptr) {
+  // what magic number is supposed to indicate that is going something wrong?
+  // altitude <= 400? (if i remember correctly that altitude is in cm)
+  auto mission = getCurrentWaypoint();
+  if (mission == nullptr) {
+    return;
+  }
+
+  if (lastWaypoint == nullptr) {
     return;
   }
 
@@ -266,16 +269,4 @@ void handleSpeedChange()
     logEntry(logBuffer, globalEntityName, LogLevel::LOG_WARNING);
     changeSpeed(MAX_SPEED / 100);
   }
-}
-
-void handleRecognitionResponse()
-{
-
-}
-
-void updateDroneDefendSystem()
-{
-  updateCurrentWaypoint();
-  handleAltiduteChange();
-  handleSpeedChange();
 }

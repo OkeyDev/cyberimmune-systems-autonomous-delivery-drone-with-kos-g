@@ -1,1 +1,0 @@
-docker compose -f docker-compose-online.yml restart kos_inspector kos_deliverer 
