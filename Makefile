@@ -1,5 +1,17 @@
 .PHONY: docker-compose-stop docs
 
+# ifneq (,$(wildcard ./.env))
+# 	include .env
+# 	export
+# endif
+
+include .env
+export
+
+
+print-env:
+	@echo "MQTT IP: $(MQTT_IP); NTP IP $(NTP_IP); ORVD IP: $(ORVD_IP); DRONE_NUMBER: $(DRONE_NUMBER)"
+
 ## -----------------------------------------------------------------------------
 ## Makefile используется для автоматизации рутинных задач, таких как:
 ## запуск, сборка, тестирование, подчистка проекта и отдельных его компонентов.
@@ -55,13 +67,13 @@ docker-build-image-deliverer-offline: ## Сборка kos-image для deliverer
 	docker run --rm --user user -v `pwd`:/mnt -ti simulator-rpi:latest /bin/bash -c "cd mnt/kos; ./cross-build.sh --target hardware --mode offline --alt lns --role deliverer --coords lns --partner-id NULL"
 
 docker-build-image-deliverer: ## Сборка kos-image для deliverer
-	docker run --rm --user user -v `pwd`:/mnt -ti simulator-rpi:latest /bin/bash -c "cd mnt/kos; ./cross-build.sh --target hardware --mode online --alt lns --role deliverer --coords lns --partner-id NULL"
+	docker run --rm --user user -v `pwd`:/mnt -ti simulator-rpi:latest /bin/bash -c "cd mnt/kos; ./cross-build.sh --target hardware --mode online --alt lns --role deliverer --coords lns --partner-id NULL --board-id deliverer_${DRONE_NUMBER} --mqtt-ip ${MQTT_IP} --mqtt-username ${MQTT_DELIVERER_USERNAME} --mqtt-password ${MQTT_PASSWORD} --ntp-ip ${NTP_IP} --server-ip ${ORVD_IP}"
 
 docker-build-image-deliverer-with-sd-image: ## Сборка kos-image для deliverer с hdd.img образом для sd карты
 	docker run --rm --user user -v `pwd`:/mnt -ti simulator-rpi:latest /bin/bash -c "cd mnt/kos; ./cross-build.sh --target hardware-with-image --mode online --alt lns --role deliverer --coords lns"
 
 docker-build-image-inspector: ## Сборка kos-image для inspector
-	docker run --rm --user user -v `pwd`:/mnt -ti simulator-rpi:latest /bin/bash -c "cd mnt/kos; ./cross-build.sh --target hardware --mode online --alt lns --role inspector --coords lns"
+	docker run --rm --user user -v `pwd`:/mnt -ti simulator-rpi:latest /bin/bash -c "cd mnt/kos; ./cross-build.sh --target hardware --mode online --alt lns --role inspector --coords lns --partner-id NULL --board-id inspector --mqtt-ip ${MQTT_IP} --mqtt-username ${MQTT_INSPECTOR_USERNAME} --mqtt-password ${MQTT_PASSWORD} --ntp-ip ${NTP_IP} --server-ip ${ORVD_IP}"
 
 docker-build-image-inspector-with-sd-image: ## Сборка kos-image для inspector с hdd.img образом для sd карты
 	docker run --rm --user user -v `pwd`:/mnt -ti simulator-rpi:latest /bin/bash -c "cd mnt/kos; ./cross-build.sh --target hardware-with-image --mode online --alt lns --role inspector --coords lns"
