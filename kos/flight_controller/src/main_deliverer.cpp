@@ -29,6 +29,10 @@ uint32_t sessionDelay;
 std::thread sessionThread, updateThread;
 /** \endcond */
 
+#ifndef ENTITY_NAME
+#define ENTITY_NAME "MAIN_DELIVERER"
+#endif
+
 /**
  * \~English Procedure that checks connection to the ATM server.
  * \~Russian Процедура, проверяющая наличие соединения с сервером ОРВД.
@@ -176,6 +180,75 @@ int askForMissionApproval(char* mission, int& result) {
     return 1;
 }
 
+void createCustomMission()
+{
+  int32_t missionCommandCount = 6;
+  MissionCommand* commands = (MissionCommand*)malloc(sizeof(MissionCommand) * missionCommandCount);
+  commands[0].type = CommandType::HOME; 
+  commands[0].content.waypoint.latitude = 10.4233556;
+  commands[0].content.waypoint.longitude = 23.3435660;
+  commands[0].content.waypoint.altitude = 100;
+
+  commands[1].type = CommandType::TAKEOFF; 
+  commands[1].content.takeoff.altitude = 100;
+
+  commands[2].type = CommandType::WAYPOINT;
+  commands[2].content.waypoint.latitude = 23.4553456;
+  commands[2].content.waypoint.longitude = 23.2345145;
+  commands[2].content.waypoint.altitude = 100;
+
+  commands[3].type = CommandType::WAYPOINT;
+  commands[3].content.waypoint.latitude = 30.4533999;
+  commands[3].content.waypoint.longitude = 30.2345145;
+  commands[3].content.waypoint.altitude = 100;
+
+  commands[4].type = CommandType::DELAY;
+  commands[4].content.delay.delay = 1;
+  commands[5].type = CommandType::LAND;
+
+  char missionBuffer[4096] = {0};
+  missionToString(commands, missionCommandCount, missionBuffer, 4096);
+  logEntry("Mission:", ENTITY_NAME, LogLevel::LOG_INFO);
+  logEntry(missionBuffer, ENTITY_NAME, LogLevel::LOG_INFO);
+  int result = 0;
+  askForMissionApproval(missionBuffer, result);
+
+  while (!result)
+  {
+    logEntry("Failed to aprove custom mission from orvd", ENTITY_NAME, LogLevel::LOG_INFO);
+    askForMissionApproval(missionBuffer, result);
+  }
+  logEntry("Successful for aproving mission from orvd", ENTITY_NAME, LogLevel::LOG_INFO);
+
+  uint32_t missionSize = getMissionBytesSize(commands, missionCommandCount);
+  uint8_t* bytes = (uint8_t*)malloc(missionSize);
+  missionToBytes(commands, missionCommandCount, bytes);
+  setMission(bytes, missionSize);
+}
+
+void receiveInspectorMessage()
+{
+    char topicBuffer[256] = {0};
+    char subscriptionBuffer[4096] = {0};
+    char logBuffer[256] = {0};
+
+    snprintf(topicBuffer, sizeof(topicBuffer), "api/dm/%s/%s", boardId, PARTNER_ID);
+    while (!receiveSubscription(topicBuffer, subscriptionBuffer, sizeof(subscriptionBuffer)) 
+        || !strcmp(subscriptionBuffer, ""))
+    {
+        sleep(1);
+    }
+    logEntry(subscriptionBuffer, ENTITY_NAME, LogLevel::LOG_WARNING);
+
+    uint8_t authenticity = 0;
+    while (!checkSignature(subscriptionBuffer, MessageSource::PARTNER_DRONE, authenticity) || !authenticity) {
+        snprintf(logBuffer, 256, "Failed to check signature of message response. Trying again in %ds", RETRY_DELAY_SEC);
+        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_WARNING);
+        sleep(RETRY_DELAY_SEC);
+    }
+    logEntry("Successful receive message from the parther drone", ENTITY_NAME, LogLevel::LOG_INFO);
+}
+
 /**
  * \~English Security module main loop. Waits for all other components to initialize. Authenticates
  * on the ATM server and receives the mission from it. After a mission and an arm request from the autopilot
@@ -237,6 +310,10 @@ int main(void) {
     //Than the message must be parsed: content starts from the first symbol and ends with "#".
     //Mission will not be received from the server.
     //Instead it should be generated here and approved by the server with 'askForMissionApproval' function.
+
+    //Copter need to be registered at ORVD
+    //receiveInspectorMessage();
+    createCustomMission();
 
     //The drone is ready to arm
     logEntry("Ready to arm", ENTITY_NAME, LogLevel::LOG_INFO);
@@ -300,6 +377,9 @@ int main(void) {
             logEntry("Failed to parse server response", ENTITY_NAME, LogLevel::LOG_WARNING);
         logEntry("Arm was not allowed. Waiting for another arm request from autopilot", ENTITY_NAME, LogLevel::LOG_WARNING);
     };
+
+
+    setCargoLock(true);
 
     //If we get here, the drone is able to arm and start the mission
     //The flight is need to be controlled from now on
