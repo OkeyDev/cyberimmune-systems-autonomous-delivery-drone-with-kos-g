@@ -462,7 +462,8 @@ int main(void) {
   // with 'publishMessage'.
 
   setLogEntryName(ENTITY_NAME);
-
+  setInspectorState(true);
+  
   while (true) {
     // :(
     // updateCurrentWaypointMQTT();

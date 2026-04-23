@@ -378,8 +378,8 @@ int main(void) {
         logEntry("Arm was not allowed. Waiting for another arm request from autopilot", ENTITY_NAME, LogLevel::LOG_WARNING);
     };
 
-
-    setCargoLock(true);
+    // disable cargo
+    setCargoLock(false);
 
     //If we get here, the drone is able to arm and start the mission
     //The flight is need to be controlled from now on

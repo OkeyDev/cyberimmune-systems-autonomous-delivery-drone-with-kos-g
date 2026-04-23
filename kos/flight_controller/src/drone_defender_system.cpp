@@ -1,9 +1,21 @@
 #include "../include/drone_defender_system.h"
 
+#include <vector>
+
 #define ALTITUDE_EPSILON 10
 #define DISTANCE_EPSILON 1.2f
+// Расстояние (в м) при котором считается что дрон достиг необходимой точки
+#define REACH_DISTANCE 0.75
 #define UPDATE_DELAY 1
 #define MAX_SPEED 1
+#define MAX_ALTIDUTE 150
+#define MIN_ALTIDUTE 55
+
+// in m (or not?)
+#define CARGOLOCK_ENABLE_DISTANCE 1
+
+// in seconds
+#define WAIT_FOR_RECOGNITION_DONE 1
 
 // -1 = if we doesn't know, what point we are currently on,
 // might be that drone isn't even on the flight
@@ -12,6 +24,10 @@ MissionCommand *targetWaypoint;
 MissionCommand *lastWaypoint;
 bool ended = false;
 int32_t targetAltidute = 0;
+bool isDroneInspector = false;
+bool disableWaypointUpdate = false;
+
+std::vector<MissionCommand*> targetInterestWaypoints = {};
 
 int32_t lastCoordX = 0;
 int32_t lastCoordY = 0;
@@ -20,8 +36,26 @@ int32_t lastCoordY = 0;
 char *globalEntityName = "DEFAULT_LOG_NAME";
 
 void setLogEntryName(char *logEntryName) { globalEntityName = logEntryName; }
+void setInspectorState(bool state) { isDroneInspector = state; }
 
+static double degToRad(int32_t degree)
 static double degToRad(double degree) { return degree * (M_PI / 180.0); }
+
+MissionCommand* getInterestWaypointNearBy(Coordinates *drone, double distance) {
+
+  for (auto point : targetInterestWaypoints)
+  {
+    double dist = calcDistance(point->content.waypoint.latitude, point->content.waypoint.longitude, 
+      drone->latitude, drone->longtitude);
+  
+    if (dist < distance) {
+      return point;
+    }    
+  }
+
+  return nullptr;
+}
+
 
 /*
  *
@@ -32,7 +66,6 @@ c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 distance = R * c
     */
-
 static double calcDistance(double lat1, double lon1, double lat2, double lon2) {
   const double R = 6371000.0f;
 
@@ -53,6 +86,20 @@ static double calcDistance(double lat1, double lon1, double lat2, double lon2) {
   return R * c;
 }
 
+static double calcDistance(int32_t lat1, int32_t lon1, int32_t lat2,
+                           int32_t lon2) {
+
+    double lat1_d = (double)lat1 / 10000000.0f;
+    double lon1_d = (double)lon1 / 10000000.0f;
+    double lat2_d = (double)lat2 / 10000000.0f;
+    double lon2_d = (double)lon2 / 10000000.0f;
+
+    calcDistance(lat1_d, lon1_d, lat2_d, lon2_d);
+  }
+
+static double calcDistance(CommandWaypoint a, CommandWaypoint b) {
+  calcDistance(a.latitude, a.longitude, b.altitude, b.longitude);
+}
 
 static float dotProduct(float x1, float y1, float x2, float y2) {
   return x1 * x2 + y1 * y2;
@@ -82,34 +129,56 @@ MissionCommand *getCurrentWaypoint() {
   return targetWaypoint;
 }
 
+    double normalizeAngle(double angle_deg) {
+        angle_deg = std::fmod(angle_deg, 360.0);
+        if (angle_deg > 180.0) angle_deg -= 360.0;
+        if (angle_deg < -180.0) angle_deg += 360.0;
+        return angle_deg;
+    }
+    
+    // Вычисление азимута (bearing) от точки A к точке B
+    // Возвращает угол в градусах от севера по часовой стрелке
+    double computeBearing(Coordinates* from, Coordinates* to) {
+        double lat1 = degToRad(from->latitude); 
+        double lat2 = degToRad(to->latitude);
+        double lon1 = degToRad(from->longtitude);
+        double lon2 = degToRad(to->longtitude);
+        
+        double delta_lon = lon2 - lon1;
+        
+        double x = std::sin(delta_lon) * std::cos(lat2);
+        double y = std::cos(lat1) * std::sin(lat2) - 
+                   std::sin(lat1) * std::cos(lat2) * std::cos(delta_lon);
+        
+        double bearing_rad = std::atan2(x, y);
+        double bearing_deg = bearing_rad * RAD_TO_DEG;
+        
+        return normalizeAngle(bearing_deg);
+    }
+
 // TODO: MUST BE TESTED
-void handleIncorrectMovement() {
+void handleIncorrectMovement(Coordinates *drone) {
   MissionCommand *waypoint = getCurrentWaypoint();
 
   // mission isn't loaded
   if (waypoint == nullptr)
     return;
 
-  int32_t laltitude, longtitude, altitude;
-  int result = getCoords(laltitude, longtitude, altitude);
-
-  if (!result)
-    return;
 
   if (lastCoordX == -1 && lastCoordY == -1) {
     // remembers current position
-    lastCoordX = laltitude;
-    lastCoordY = longtitude;
+    lastCoordX = drone->laltitude;
+    lastCoordY = drone->longtitude;
     return;
   }
 
   float waypointDirX =
-      1.0f / float(waypoint->content.waypoint.latitude - laltitude);
+      1.0f / float(waypoint->content.waypoint.latitude - drone->laltitude);
   float waypointDirY =
-      1.0f / float(waypoint->content.waypoint.longitude - longtitude);
+      1.0f / float(waypoint->content.waypoint.longitude - drone->longtitude);
 
-  float currentDirX = 1.0f / float(laltitude - lastCoordX);
-  float currentDirY = 1.0f / float(longtitude - lastCoordY);
+  float currentDirX = 1.0f / float(drone->laltitude - lastCoordX);
+  float currentDirY = 1.0f / float(drone->longtitude - lastCoordY);
 
   if (std::abs(1 - dotProduct(waypointDirX, waypointDirY, currentDirX,
                               currentDirY)) < 0.05f) {
@@ -125,6 +194,10 @@ void handleIncorrectMovement() {
 
     changeWaypoint(content.latitude, content.longitude, content.altitude);
   }
+
+  // do not forget to update last coordinates
+  lastCoordX = laltitude;
+  lastCoordY = longtitude;
 }
 
 void setTargetAltitude(int32_t altitude) {
@@ -148,7 +221,7 @@ void setNextWaypoint(MissionCommand *commands, int count, int start = 0) {
   }
 
   // Mission ended
-  if(targetWaypoint == prevWaypoint) {
+  if (targetWaypoint == prevWaypoint) {
     targetWaypointIndex = -1;
     lastWaypoint = nullptr;
     targetWaypoint = nullptr;
@@ -156,11 +229,24 @@ void setNextWaypoint(MissionCommand *commands, int count, int start = 0) {
   } else {
     char logBuffer[256];
     snprintf(logBuffer, sizeof(logBuffer), "Waypoint changed from %d to %d", prevWaypointIndex, targetWaypointIndex);
-    logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_INFO);
+    logEntry(logBuffer, globalEntityName, LogLevel::LOG_INFO);
   }
 }
 
-void updateCurrentWaypoint() {
+bool isWaypointReached(Coordinates *drone, CommandWaypoint waypoint,
+                       double distance) {
+  double dist = calcDistance(waypoint.latitude, waypoint.longitude,
+                             drone->latitude, drone->longtitude);
+
+  if (dist < distance) {
+    return 1;
+  }
+
+  return 0;
+}
+
+
+void updateCurrentWaypoint(Coordinates *drone) {
   int count = 0;
   auto commands = getMissionCommands(count);
 
@@ -177,9 +263,6 @@ void updateCurrentWaypoint() {
     return;
   }
 
-  auto x1 = targetWaypoint->content.waypoint.latitude;
-  auto y1 = targetWaypoint->content.waypoint.longitude;
-
   int32_t x2, y2, altidute;
   auto result = getCoords(x2, y2, altidute);
 
@@ -188,25 +271,10 @@ void updateCurrentWaypoint() {
              LogLevel::LOG_WARNING);
   }
 
-  auto a = (x1 - x2);
-  auto b = (y1 - y2);
-  double lat1 = (double)x1 / 10000000.0f;
-  double lon1 = (double)y1 / 10000000.0f;
-  double lat2 = (double)x2 / 10000000.0f;
-  double lon2 = (double)y2 / 10000000.0f;
-  auto dist = calcDistance(lat1, lon1, lat2, lon2);
-
-  char logBuffer[256];
-  snprintf(logBuffer, sizeof(logBuffer),
-           "lat1: %f; lon1: %f; lat2: %f; lon2: %f; DIST: %f; Waypoint: %d",
-           lat1, lon1, lat2, lon2, dist, targetWaypointIndex);
-  logEntry(logBuffer, globalEntityName, LogLevel::LOG_INFO);
-
-  if (dist < DISTANCE_EPSILON) {
+  if (isWaypointReached(drone, targetWaypoint->content.waypoint, REACH_DISTANCE)) {
     setNextWaypoint(commands, count, targetWaypointIndex + 1);
   }
 }
-
 
 void handleAltiduteChange() {
   // somehow need to get destination waypoint altidute to make normal compare?
@@ -249,11 +317,7 @@ void handleSpeedChange()
   // what magic number is supposed to indicate that is going something wrong?
   // altitude <= 400? (if i remember correctly that altitude is in cm)
   auto mission = getCurrentWaypoint();
-  if (mission == nullptr) {
-    return;
-  }
-
-  if (lastWaypoint == nullptr) {
+  if (mission == nullptr || lastWaypoint == nullptr) {
     return;
   }
 
@@ -271,10 +335,102 @@ void handleSpeedChange()
   }
 }
 
-void updateDefenderSystem()
+
+// isWaypointReached(command->content.waypoint);
+// cargoLock(): if isWaypointReached() {setCargoLock(1)} // Освободить
+// updateCurrentWaypoint(): if (isWaypointReached(CURRENT_WAYPOINT)) setNextWaypoint()
+// recognitionSystem(): if (isWaypointReached(ROI_WAYPIOINT)) {сделать снимок}
+
+void handleCargoLock(Coordinates *drone) {
+  int32_t latitude, longtitude, altitude;
+  getCoords(latitude, longtitude, altitude);
+
+  int32_t count = 0;
+  auto commands = getMissionCommands(count);
+
+  for (int i = 0; i < count; i++) {
+    MissionCommand *command = commands + i;
+
+    // Меньше трех метров
+    if (command->type == CommandType::INTEREST &&
+        calcDistance(command->content.waypoint.latitude,
+                     command->content.waypoint.longitude, latitude,
+                     longtitude) < CARGOLOCK_ENABLE_DISTANCE) {
+      setCargoLock(1);
+      return;
+    }
+  }
+}
+
+void handleRecognitionResponse(Coordinates* drone)
 {
-  updateCurrentWaypoint();
+  if (targetWaypoint == nullptr) {
+    return; 
+  }
+
+  MissionCommand* interest = getInterestWaypointNearBy(drone, REACH_DISTANCE);
+  if (interest == nullptr)  {
+    return;
+  }
+
+  targetWaypoint = interest;
+  disableWaypointUpdate = true;
+
+  int requestResult = requestRecognition(); 
+  while (requestResult)
+  {
+    char tagResult[4096] = {0};
+    char logBuffer[256] = {0};
+    int32_t altidute = 0;
+    int responseResult = getRecognitionResponse(tagResult, altidute);
+    if (!strcmp(tagResult, "") && !responseResult) {
+      snprintf(logBuffer, sizeof(logBuffer), "Failed to receive response from AI. Retry in: %d", WAIT_FOR_RECOGNITION_DONE);
+      logEntry(logBuffer, globalEntityName, LogLevel::LOG_ERROR);
+    }
+    else if (!strcmp(tagResult, "NONE"))
+    {
+      snprintf(logBuffer, sizeof(logBuffer), "AI requested to change altidute: %d", altidute);
+      logEntry(logBuffer, globalEntityName, LogLevel::LOG_ERROR);
+
+      // altitude может выходить за границы. Ограничить с помощью max
+      if (altidute >= MAX_ALTIDUTE || altidute <= MIN_ALTIDUTE) {
+        logEntry("AI trying to naebat nas", globalEntityName, LogLevel::LOG_WARNING);
+        changeAltitude(MAX_ALTIDUTE);
+        setTargetAltitude(MAX_ALTIDUTE);
+      } 
+      else {
+        changeAltitude(altidute);
+        setTargetAltitude(altidute);
+      }
+    }
+  }
+}
+
+void initDefenderSystem()
+{
+  int count = 0;
+  auto commands = getMissionCommands(count);
+
+  for (int i = 0; i < count; i++)
+  {
+    MissionCommand* command = commands + i;
+
+    if (command->type == CommandType::INTEREST) {
+      targetInterestWaypoints.push_back(command);
+    }
+  }
+}
+
+void updateDefenderSystem(Coordinates *drone)
+{
+  if (!disableWaypointUpdate) {
+    updateCurrentWaypoint(drone);
+  }
   handleAltiduteChange();
 
   handleSpeedChange();
+
+  if (isDroneInspector) {
+    handleRecognitionResponse(drone);
+  }
 }

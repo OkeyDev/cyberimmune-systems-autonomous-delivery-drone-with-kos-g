@@ -16,7 +16,22 @@
 #include <thread>
 #include <unistd.h>
 
+class Coordinates {
+public:
+  int32_t latitude;
+  int32_t longtitude;
+  int32_t altitude;
+
+  Coordinates(int32_t lat, int32_t lon, int32_t alt)
+      : latitude(lat), longtitude(lon), altitude(alt) {}
+};
+
+void initDefenderSystem();
+
 void setLogEntryName(char* logEntryName);
+void setInspectorState(bool state);
+
 void updateDefenderSystem();
+
 
 #endif
