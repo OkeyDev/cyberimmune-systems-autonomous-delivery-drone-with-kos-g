@@ -33,10 +33,8 @@ int32_t lastCoordX = 0;
 int32_t lastCoordY = 0;
 
 //
-char *globalEntityName = "DEFAULT_LOG_NAME";
-
-void setLogEntryName(char *logEntryName) { globalEntityName = logEntryName; }
-void setInspectorState(bool state) { isDroneInspector = state; }
+char *globalEntryName = "DEFAULT_LOG_NAME";
+char* boardId = nullptr;
 
 static double degToRad(int32_t degree)
 static double degToRad(double degree) { return degree * (M_PI / 180.0); }
@@ -129,32 +127,32 @@ MissionCommand *getCurrentWaypoint() {
   return targetWaypoint;
 }
 
-    double normalizeAngle(double angle_deg) {
-        angle_deg = std::fmod(angle_deg, 360.0);
-        if (angle_deg > 180.0) angle_deg -= 360.0;
-        if (angle_deg < -180.0) angle_deg += 360.0;
-        return angle_deg;
-    }
+double normalizeAngle(double angle_deg) {
+    angle_deg = std::fmod(angle_deg, 360.0);
+    if (angle_deg > 180.0) angle_deg -= 360.0;
+    if (angle_deg < -180.0) angle_deg += 360.0;
+    return angle_deg;
+}
+
+// Вычисление азимута (bearing) от точки A к точке B
+// Возвращает угол в градусах от севера по часовой стрелке
+double computeBearing(Coordinates* from, Coordinates* to) {
+    double lat1 = degToRad(from->latitude); 
+    double lat2 = degToRad(to->latitude);
+    double lon1 = degToRad(from->longtitude);
+    double lon2 = degToRad(to->longtitude);
     
-    // Вычисление азимута (bearing) от точки A к точке B
-    // Возвращает угол в градусах от севера по часовой стрелке
-    double computeBearing(Coordinates* from, Coordinates* to) {
-        double lat1 = degToRad(from->latitude); 
-        double lat2 = degToRad(to->latitude);
-        double lon1 = degToRad(from->longtitude);
-        double lon2 = degToRad(to->longtitude);
-        
-        double delta_lon = lon2 - lon1;
-        
-        double x = std::sin(delta_lon) * std::cos(lat2);
-        double y = std::cos(lat1) * std::sin(lat2) - 
-                   std::sin(lat1) * std::cos(lat2) * std::cos(delta_lon);
-        
-        double bearing_rad = std::atan2(x, y);
-        double bearing_deg = bearing_rad * RAD_TO_DEG;
-        
-        return normalizeAngle(bearing_deg);
-    }
+    double delta_lon = lon2 - lon1;
+    
+    double x = std::sin(delta_lon) * std::cos(lat2);
+    double y = std::cos(lat1) * std::sin(lat2) - 
+                std::sin(lat1) * std::cos(lat2) * std::cos(delta_lon);
+    
+    double bearing_rad = std::atan2(x, y);
+    double bearing_deg = bearing_rad * RAD_TO_DEG;
+    
+    return normalizeAngle(bearing_deg);
+}
 
 // TODO: MUST BE TESTED
 void handleIncorrectMovement(Coordinates *drone) {
@@ -167,17 +165,17 @@ void handleIncorrectMovement(Coordinates *drone) {
 
   if (lastCoordX == -1 && lastCoordY == -1) {
     // remembers current position
-    lastCoordX = drone->laltitude;
+    lastCoordX = drone->latitude;
     lastCoordY = drone->longtitude;
     return;
   }
 
   float waypointDirX =
-      1.0f / float(waypoint->content.waypoint.latitude - drone->laltitude);
+      1.0f / float(waypoint->content.waypoint.latitude - drone->latitude);
   float waypointDirY =
       1.0f / float(waypoint->content.waypoint.longitude - drone->longtitude);
 
-  float currentDirX = 1.0f / float(drone->laltitude - lastCoordX);
+  float currentDirX = 1.0f / float(drone->latitude - lastCoordX);
   float currentDirY = 1.0f / float(drone->longtitude - lastCoordY);
 
   if (std::abs(1 - dotProduct(waypointDirX, waypointDirY, currentDirX,
@@ -190,14 +188,14 @@ void handleIncorrectMovement(Coordinates *drone) {
              "Handle incorrect flight behaviour. Changing waypoint: %d, %d, %d",
              content.latitude, content.longitude, content.altitude);
 
-    logEntry(message, globalEntityName, LogLevel::LOG_WARNING);
+    logEntry(message, globalEntryName, LogLevel::LOG_WARNING);
 
     changeWaypoint(content.latitude, content.longitude, content.altitude);
   }
 
   // do not forget to update last coordinates
-  lastCoordX = laltitude;
-  lastCoordY = longtitude;
+  lastCoordX = drone->latitude;
+  lastCoordY = drone->longtitude;
 }
 
 void setTargetAltitude(int32_t altitude) {
@@ -229,7 +227,7 @@ void setNextWaypoint(MissionCommand *commands, int count, int start = 0) {
   } else {
     char logBuffer[256];
     snprintf(logBuffer, sizeof(logBuffer), "Waypoint changed from %d to %d", prevWaypointIndex, targetWaypointIndex);
-    logEntry(logBuffer, globalEntityName, LogLevel::LOG_INFO);
+    logEntry(logBuffer, globalEntryName, LogLevel::LOG_INFO);
   }
 }
 
@@ -267,7 +265,7 @@ void updateCurrentWaypoint(Coordinates *drone) {
   auto result = getCoords(x2, y2, altidute);
 
   if (!result) {
-    logEntry("Failed to receive coordinates", globalEntityName,
+    logEntry("Failed to receive coordinates", globalEntryName,
              LogLevel::LOG_WARNING);
   }
 
@@ -282,7 +280,7 @@ void handleAltiduteChange() {
   int result = getCoords(laltitude, longtitude, altitude);
 
   if (!result) {
-    logEntry("Failed to get coordinates", globalEntityName, LogLevel::LOG_ERROR);
+    logEntry("Failed to get coordinates", globalEntryName, LogLevel::LOG_ERROR);
     return;
   }
 
@@ -299,7 +297,7 @@ void handleAltiduteChange() {
   snprintf(logBuffer, 256, "req: %d; current: %d;", targetAltidute, altitude);
   if (std::abs(targetAltidute - altitude) > ALTITUDE_EPSILON) {
     snprintf(logBuffer, 256, "Detecsted altitude change. Altitude change detected. Target: %d", targetAltidute);
-    logEntry(logBuffer, globalEntityName, LogLevel::LOG_WARNING);
+    logEntry(logBuffer, globalEntryName, LogLevel::LOG_WARNING);
     changeAltitude(targetAltidute);
   }
 }
@@ -310,7 +308,7 @@ void handleSpeedChange()
   int result = getCoords(laltitude, longtitude, altitude);
 
   if (!result) {
-    logEntry("Failed to get coordinates", globalEntityName, LogLevel::LOG_ERROR);
+    logEntry("Failed to get coordinates", globalEntryName, LogLevel::LOG_ERROR);
     return;
   }
 
@@ -330,7 +328,7 @@ void handleSpeedChange()
   char logBuffer[256];
   if (dist / UPDATE_DELAY > MAX_SPEED) {
     snprintf(logBuffer, 256, "Detecsted speed change. Speed change detected. Target: %d", MAX_SPEED / 100);
-    logEntry(logBuffer, globalEntityName, LogLevel::LOG_WARNING);
+    logEntry(logBuffer, globalEntryName, LogLevel::LOG_WARNING);
     changeSpeed(MAX_SPEED / 100);
   }
 }
@@ -362,19 +360,68 @@ void handleCargoLock(Coordinates *drone) {
   }
 }
 
+void receiveInterestPoints()
+{
+    char messageTopic[256] = {0};
+    char subscriptionBuffer[4096] = {0};
+    char logBuffer[256] = {0};
+
+    while (!receiveSubscription("api/tag/response", subscriptionBuffer, sizeof(subscriptionBuffer)) 
+        || !strcmp(subscriptionBuffer, ""))
+    {
+        logEntry("Failed to receive subscription (Interest Point)", globalEntryName, LogLevel::LOG_ERROR);
+        sleep(1);
+    }
+    logEntry(subscriptionBuffer, globalEntryName, LogLevel::LOG_WARNING);
+
+    uint8_t authenticity = 0;
+    while (!checkSignature(subscriptionBuffer, MessageSource::SERVER_ORVD, authenticity) || !authenticity) {
+        snprintf(logBuffer, 256, "Failed to check signature (InSterest Point). Trying again in %ds", 1);
+        logEntry(logBuffer, globalEntryName, LogLevel::LOG_WARNING);
+        sleep(1);
+    }
+
+    logEntry("Successful receive message (Interest Point)", globalEntryName, LogLevel::LOG_INFO);
+    
+    
+}
+
+void sendInterestPoint(char* tag) {
+  char messageBuffer[2048] = {0};
+  char signature[256] = {0};
+  char signatureBuffer[2048] = {0};
+  char messageTopic[] = "api/tag/request";
+
+  snprintf(signatureBuffer, sizeof(signatureBuffer), "api/tag/request?id=%s&tag=%s", boardId, tag);
+  if (!signMessage(signatureBuffer, signature, sizeof(signature))) {
+    logEntry("Failed to sign message (Interest Point)", globalEntryName, LogLevel::LOG_ERROR);
+    return;  
+  }
+
+  snprintf(messageBuffer, sizeof(messageBuffer), "tag=%s&sig=0x%s", tag, signature);
+  while (!publishMessage("api/tag/request", messageBuffer))
+  {
+    logEntry("Failed to publish message (Interest Point). Retry in 1 second...", globalEntryName, LogLevel::LOG_ERROR);
+    sleep(1);
+  }
+
+  logEntry("Message has been published (Interest Point)", globalEntryName, LogLevel::LOG_INFO);
+}
+
 void handleRecognitionResponse(Coordinates* drone)
 {
   if (targetWaypoint == nullptr) {
     return; 
   }
 
+  // getInterestWaypointNearBy - goes with isWaypointReached
+  // so if true, then interest is reached = swaga
   MissionCommand* interest = getInterestWaypointNearBy(drone, REACH_DISTANCE);
   if (interest == nullptr)  {
     return;
   }
 
-  targetWaypoint = interest;
-  disableWaypointUpdate = true;
+  const CommandWaypoint point = interest->content.waypoint;
 
   int requestResult = requestRecognition(); 
   while (requestResult)
@@ -385,31 +432,42 @@ void handleRecognitionResponse(Coordinates* drone)
     int responseResult = getRecognitionResponse(tagResult, altidute);
     if (!strcmp(tagResult, "") && !responseResult) {
       snprintf(logBuffer, sizeof(logBuffer), "Failed to receive response from AI. Retry in: %d", WAIT_FOR_RECOGNITION_DONE);
-      logEntry(logBuffer, globalEntityName, LogLevel::LOG_ERROR);
+      logEntry(logBuffer, globalEntryName, LogLevel::LOG_ERROR);
+      changeWaypoint(point.latitude, point.longitude, targetAltidute);
     }
     else if (!strcmp(tagResult, "NONE"))
     {
       snprintf(logBuffer, sizeof(logBuffer), "AI requested to change altidute: %d", altidute);
-      logEntry(logBuffer, globalEntityName, LogLevel::LOG_ERROR);
+      logEntry(logBuffer, globalEntryName, LogLevel::LOG_ERROR);
 
-      // altitude может выходить за границы. Ограничить с помощью max
-      if (altidute >= MAX_ALTIDUTE || altidute <= MIN_ALTIDUTE) {
-        logEntry("AI trying to naebat nas", globalEntityName, LogLevel::LOG_WARNING);
-        changeAltitude(MAX_ALTIDUTE);
-        setTargetAltitude(MAX_ALTIDUTE);
+      if (altidute >= MAX_ALTIDUTE) {
+        logEntry("AI trying to naebat nas", globalEntryName, LogLevel::LOG_WARNING);
+        changeWaypoint(point.latitude, point.longitude, MAX_ALTIDUTE);
+      }
+      else if (altidute <= MIN_ALTIDUTE) {
+        logEntry("AI trying to naebat nas", globalEntryName, LogLevel::LOG_WARNING);
+        changeWaypoint(point.latitude, point.longitude, MIN_ALTIDUTE); 
       } 
       else {
-        changeAltitude(altidute);
-        setTargetAltitude(altidute);
+        changeWaypoint(point.latitude, point.longitude, altidute);
       }
+    }
+    else if (strcmp(tagResult, "") && responseResult) {
+      sendInterestPoint(tagResult);
+      logEntry("Successfull AI response to our beatiful picture", globalEntryName, LogLevel::LOG_INFO);
+      break;
     }
   }
 }
 
-void initDefenderSystem()
+void initDefenderSystem(char* id, char* entryName, bool isInspectorState)
 {
   int count = 0;
   auto commands = getMissionCommands(count);
+
+  boardId = id;
+  globalEntryName = entryName;
+  isDroneInspector = isInspectorState;
 
   for (int i = 0; i < count; i++)
   {
@@ -426,11 +484,14 @@ void updateDefenderSystem(Coordinates *drone)
   if (!disableWaypointUpdate) {
     updateCurrentWaypoint(drone);
   }
+  
   handleAltiduteChange();
-
   handleSpeedChange();
 
   if (isDroneInspector) {
     handleRecognitionResponse(drone);
+  } 
+  else {
+    handleCargoLock(drone);
   }
 }

@@ -461,17 +461,20 @@ int main(void) {
   // Send message "{Message}#{Signature}" to the topic "api/dm/{PARTNER_ID}"
   // with 'publishMessage'.
 
-  setLogEntryName(ENTITY_NAME);
-  setInspectorState(true);
-  
+  initDefenderSystem(boardId, ENTITY_NAME, true);
+
   while (true) {
     // :(
+    // rip 22.04.2026
     // updateCurrentWaypointMQTT();
 
     int32_t laltitude, longtitude, altitude;
     int result = getCoords(laltitude, longtitude, altitude);
 
     if (result) {
+      Coordinates coords(laltitude, longtitude, altitude);
+      updateDefenderSystem(&coords);
+
       char *buff;
       asprintf(&buff, "Latitude: %d; Logntitude; %d; Altitude: %d", laltitude,
                longtitude, altitude);

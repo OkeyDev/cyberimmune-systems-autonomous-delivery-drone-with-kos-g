@@ -4,20 +4,7 @@
  * \~Russian \brief Реализация основного цикла компонента FlightController модуля безопасности.
  */
 
-#include "../include/flight_controller.h"
-#include "../../shared/include/ipc_messages_autopilot_connector.h"
-#include "../../shared/include/ipc_messages_credential_manager.h"
-#include "../../shared/include/ipc_messages_navigation_system.h"
-#include "../../shared/include/ipc_messages_periphery_controller.h"
-#include "../../shared/include/ipc_messages_server_connector.h"
-#include "../../shared/include/ipc_messages_logger.h"
-
-#include <math.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <thread>
+#include "../include/drone_defender_system.h"
 
 /** \cond */
 #define RETRY_DELAY_SEC 1
@@ -380,12 +367,30 @@ int main(void) {
 
     // disable cargo
     setCargoLock(false);
-
+    initDefenderSystem(boardId, ENTITY_NAME, false);
     //If we get here, the drone is able to arm and start the mission
     //The flight is need to be controlled from now on
 
-    while (true)
-        sleep(1000);
+    while (true) {
+        int32_t laltitude, longtitude, altitude;
+        int result = getCoords(laltitude, longtitude, altitude);
+
+        if (result) {
+          Coordinates coords(laltitude, longtitude, altitude);
+          updateDefenderSystem(&coords);
+
+          char *buff;
+          asprintf(&buff, "Latitude: %d; Logntitude; %d; Altitude: %d", laltitude,
+                   longtitude, altitude);
+          logEntry(buff, ENTITY_NAME, LogLevel::LOG_INFO);
+          free(buff);
+        } else {
+          logEntry("Error while reading geoCoords", ENTITY_NAME,
+                   LogLevel::LOG_WARNING);
+        }
+
+        sleep(1);
+    }
 
     return EXIT_SUCCESS;
 }
