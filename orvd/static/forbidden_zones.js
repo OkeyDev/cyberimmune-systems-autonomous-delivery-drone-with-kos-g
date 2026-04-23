@@ -36,9 +36,14 @@ const tileLayer = new ol.layer.Tile({
     })
 });
 
+const tileDebugLayer = new ol.layer.Tile({
+    source: new ol.source.TileDebug()
+});
+
 const map = new ol.Map({
     target: 'map',
     layers: [
+        tileDebugLayer,
         tileLayer
     ],
     view: new ol.View({
