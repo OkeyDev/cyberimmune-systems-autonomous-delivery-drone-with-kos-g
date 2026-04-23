@@ -37,7 +37,7 @@ set (ENTITIES
         PeripheryController
         ServerConnector
         Logger
-        precompiled_vfs::VfsSdCardFs
+        precompiled_vfs::VfsRamFs
         precompiled_vfs::VfsNet
         ${NTPD_ENTITY}
         KlogStorageEntity
@@ -47,20 +47,20 @@ set (FILES)
 
 set (LOG_LEVEL INFO)
 create_logrr_server (ENTITY_NAME "LogrrServer"
-                    VFS_CONN_ID "kl.VfsSdCardFs"
+                    VFS_CONN_ID "kl.VfsRamFs"
                     OUTPUT_CHANNELS "logrr.LogrrFsOutputChannel"
                     LOG_LEVEL INFO
                     RECV_CORE_LOGS
                     WRITE_TO_CORE ON)
 create_logrr_fs_output_channel (ENTITY_NAME "LogrrFsOutputChannel"
                                 SERVER_TARGET "logrr_server::LogrrServer"
-                                VFS_CONN_ID "kl.VfsSdCardFs"
+                                VFS_CONN_ID "kl.VfsRamFs"
                                 LOG_DIR "/logs")
 connect_to_logrr_server (SERVER_TARGET logrr_server::LogrrServer ENTITIES FlightController)
 
 project_header_default ("STANDARD_GNU_11:YES" "STRICT_WARNINGS:NO")
 
-set_target_properties (precompiled_vfs::VfsSdCardFs PROPERTIES
+set_target_properties (precompiled_vfs::VfsRamFs PROPERTIES
     EXTRA_ARGS "
     - -l
     - devfs /dev devfs 0
@@ -68,13 +68,13 @@ set_target_properties (precompiled_vfs::VfsSdCardFs PROPERTIES
     - romfs /etc romfs ro")
 
 set (DHCPCD_ENV "
-    VFS_FILESYSTEM_BACKEND: client{fs->net}:kl.VfsSdCardFs
+    VFS_FILESYSTEM_BACKEND: client{fs->net}:kl.VfsRamFs
     VFS_NETWORK_BACKEND: client:kl.VfsNet")
 
 set (DHCPCD_ARGS "\
     - '-4'
     - '-f'
-    - /resources/hdd/etc/dhcpcd.conf")
+    - /etc/dhcpcd.conf")
 
 if (SIMULATION OR SERVER)
     set_target_properties (precompiled_vfs::VfsNet PROPERTIES
@@ -83,7 +83,7 @@ if (SIMULATION OR SERVER)
         - devfs /dev devfs 0
         - -l
         - romfs /etc romfs ro")
-    set_target_properties (precompiled_vfs::VfsSdCardFs PROPERTIES
+    set_target_properties (precompiled_vfs::VfsRamFs PROPERTIES
         EXTRA_ARGS "\
         - -l
         - devfs /dev devfs rw
@@ -92,17 +92,19 @@ if (SIMULATION OR SERVER)
         - -l
         - romfs /etc romfs ro
         - -l
-        - ramfs /var ramfs rw")
+        - ramfs /var ramfs rw
+        - -l
+        - ramfs /logs ramfs rw")
 
     set_target_properties (rump::dhcpcd_entity PROPERTIES
-        DEPENDS_ON_ENTITY "precompiled_vfs::VfsSdCardFs;precompiled_vfs::VfsNet"
+        DEPENDS_ON_ENTITY "precompiled_vfs::VfsRamFs;precompiled_vfs::VfsNet"
         EXTRA_ENV ${DHCPCD_ENV}
         EXTRA_ARGS ${DHCPCD_ARGS})
 
     file(COPY_FILE ${CMAKE_SOURCE_DIR}/resources/hdd/etc/ntp.conf.in ${CMAKE_SOURCE_DIR}/resources/hdd/etc/ntp.conf)
     file(APPEND ${CMAKE_SOURCE_DIR}/resources/hdd/etc/ntp.conf "server ${NTP_IP} minpoll 3 maxpoll 9 iburst trust")
 
-    list(APPEND ENTITIES precompiled_vfs::VfsSdCardFs precompiled_vfs::VfsNet rump::dhcpcd_entity)
+    list(APPEND ENTITIES precompiled_vfs::VfsRamFs precompiled_vfs::VfsNet rump::dhcpcd_entity)
     list(APPEND FILES ${CMAKE_SOURCE_DIR}/resources/hdd/etc/dhcpcd.conf
 		    ${CMAKE_SOURCE_DIR}/resources/hdd/etc/ntp.conf
 	        ${CMAKE_SOURCE_DIR}/resources/hdd/etc/hosts
@@ -121,7 +123,7 @@ if (SERVER)
             VFS_NETWORK_BACKEND: client:kl.VfsNet"
             EXTRA_ARGS ${DHCPCD_ARGS})
         set_target_properties (precompiled_vfs::VfsNet PROPERTIES
-        DEPENDS_ON_ENTITY "${entropy_ENTITY};dnet_brcmfmac::server;${dnet_ENTITY}")
+        DEPENDS_ON_ENTITY "${entropy_ENTITY};dnet_brcm_fmac::executable;dnet_executables::whole;${dnet_ENTITY}")
         set_target_properties (${wpa_SUPPLICANT_ENTITY} PROPERTIES
             DEPENDS_ON_ENTITY ""
             EXTRA_CONNECTIONS "\
@@ -199,4 +201,9 @@ else ()
                         KLOG_ENTITY KlogEntityHw
                         IMAGE_FILES ${ENTITIES} ${FIRMWARE_FILES} ${FILES})
     target_link_libraries (KlogEntityHw kssaudit)
+# SD card image with KasperskyOS for the target hardware platform.
+    include (${KL_SDK_ROOT_PATH}/common/build-sd-image.cmake)
+    build_sd_image (sd-image
+                        KOS_IMAGE_TARGET kos-image
+                        PATH_PARTITION1_IMAGE ${IMAGE_FS})
 endif()

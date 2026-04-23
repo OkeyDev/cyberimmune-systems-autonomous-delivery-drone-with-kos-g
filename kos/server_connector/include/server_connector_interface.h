@@ -68,9 +68,7 @@ public:
         //TODO: rewrite to cpp way
         char t[MaxTopicLength + 1] = {0};
         topic.copy(t, topic.size() + 1);
-        char p[MaxPublicationLength + 1] = {0};
-        publication.copy(p, publication.size() + 1);
-        success = publish(t, p);
+        success = publish(t, publication);
     }
 
 /**

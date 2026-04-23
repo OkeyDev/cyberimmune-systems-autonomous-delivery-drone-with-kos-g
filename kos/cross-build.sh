@@ -25,8 +25,9 @@ MQTT_IP="10.0.2.2"
 MQTT_USERNAME=""
 MQTT_PASSWORD=""
 NTP_IP=${SERVER_IP}
-COORD_SRC=1
-ALT_SRC=1
+COORD_SRC=2
+ALT_SRC=2
+SD_IMAGE="FALSE"
 
 set -eu
 
@@ -60,7 +61,11 @@ function help
     --ntp-ip,
              User-defined IP of NTP server
     --target,
-             Build target: hardware (real), simulation (sim), unit-tests (unit) or pal-tests (pal)
+             Build target: hardware (real),
+                           hardware-with-image (real-with-image),
+                           simulation (sim),
+                           unit-tests (unit),
+                           pal-tests (pal).
     --mode,
              Connection mode: online or offline
     --coords,
@@ -119,6 +124,13 @@ do
                 PAL_TESTS="FALSE"
                 KOS_TARGET="kos-image"
                 SDK_TYPE="RaspberryPi4b"
+            elif [ "$2" == "hardware-with-image" ] || [ "$2" == "real-with-image" ]; then
+                SIMULATION="FALSE"
+                UNIT_TESTS="FALSE"
+                PAL_TESTS="FALSE"
+                KOS_TARGET="kos-image"
+                SDK_TYPE="RaspberryPi4b"
+                SD_IMAGE="TRUE"
             elif [ "$2" == "simulation" ] || [ "$2" == "sim" ]; then
                 SIMULATION="TRUE"
                 UNIT_TESTS="FALSE"
@@ -214,6 +226,11 @@ if [ "$SDK_TYPE" == "" ] || [ "$SDK_VERSION" == "" ]; then
     exit 1
 fi
 
+if [ "$COORD_SRC" == 1 ] && [ "$ALT_SRC" == 2 ]; then
+    echo "Could not use GNSS and LNS at the same time"
+    exit 1
+fi
+
 if [ "$SIMULATION" == "TRUE" ]; then
     if [ "$INSPECTOR_ROLE" == "TRUE" ]; then
         if [ "$BOARD_ID" == "" ]; then
@@ -255,3 +272,7 @@ export INSTALL_PREFIX="$BUILD/../install"
       -D CMAKE_INSTALL_PREFIX:STRING="$INSTALL_PREFIX" \
       -D CMAKE_TOOLCHAIN_FILE="$SDK_PREFIX/toolchain/share/toolchain-aarch64-kos.cmake" \
       "$SCRIPT_DIR/" && "$SDK_PREFIX/toolchain/bin/cmake" --build "$BUILD" --target "$KOS_TARGET" --verbose
+
+if [ "$SD_IMAGE" == "TRUE" ]; then
+	"$SDK_PREFIX/toolchain/bin/cmake" --build "$BUILD" --target "sd-image" --verbose
+fi

@@ -14,6 +14,7 @@
 #pragma once
 
 #include "../../shared/include/ipc_messages_logger.h"
+#include <string>
 
 /**
  * \~English Initializes softwate and hardware components required
@@ -31,6 +32,7 @@ int initPeripheryController();
  * \return Возвращает 1, если устройства доступны, 0 -- иначе.
  */
 int initGpioPins();
+int initCamera();
 
 /**
  * \~English Reports the current mode of drone motors power supply.
@@ -57,7 +59,7 @@ int setBuzzer(bool enable);
  * \param[out] picture Снятое изображение в формате Base64.
  * \return Возвращает 1, если фотография была снята.
  */
-int takePicture(char* picture);
+int takePicture(std::string& picture);
 
 /**
  * \~English Turns on the buzzer and then starts a separate process that will turn off

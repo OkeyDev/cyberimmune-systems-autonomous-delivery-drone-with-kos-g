@@ -201,10 +201,6 @@ int main(void) {
     snprintf(logBuffer, 256, "Board '%s' is initialized", boardId);
     logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_INFO);
 
-    //Enable buzzer to indicate, that all modules has been initialized
-    if (!enableBuzzer())
-        logEntry("Failed to enable buzzer at Periphery Controller", ENTITY_NAME, LogLevel::LOG_WARNING);
-
     //Copter need to be registered at ORVD
     char authRequest[512] = {0};
     char authSignature[257] = {0};

@@ -4,7 +4,7 @@ const UInt16 MaxIdLength = 32;
 const UInt16 MaxQueryLength = 1024;
 const UInt16 MaxResponseLength = 1024;
 const UInt16 MaxTopicLength = 64;
-const UInt16 MaxPublicationLength = 1024;
+const UInt32 MaxPublicationLength = 4194304;
 const UInt16 MaxSubscriptionLength = 4096;
 
 interface {

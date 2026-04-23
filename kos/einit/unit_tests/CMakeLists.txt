@@ -4,7 +4,7 @@ include (platform/image)
 
 project_header_default ("STANDARD_GNU_11:YES" "STRICT_WARNINGS:YES")
 
-set_target_properties (precompiled_vfs::VfsSdCardFs PROPERTIES
+set_target_properties (precompiled_vfs::VfsRamFs PROPERTIES
     EXTRA_ARGS "\
     - -l
     - devfs /dev devfs 0")
@@ -16,7 +16,7 @@ else()
   add_custom_target (${FS_IMAGE} COMMAND ${KL_SDK_ROOT_PATH}/common/prepare_hdd_img.sh -s 128 -f fat32 -img ${FS_IMAGE})
 endif()
 
-set (ENTITIES UnitTests precompiled_vfs::VfsSdCardFs)
+set (ENTITIES UnitTests precompiled_vfs::VfsRamFs)
 
 set (QEMU_FLAGS "--nographic -monitor none -netdev user,id=net0,dhcpstart=10.0.2.15 -drive file=${FS_IMAGE},if=sd,format=raw")
 set (QEMU_ENV "QEMU_AUDIO_DRV=none")

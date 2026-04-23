@@ -807,15 +807,15 @@ uint32_t parseDelay(char* response) {
 }
 
 int requestRecognition() {
-    char image[1024] = {0};
-    if (!takePicture(image)) {
+    std::string image;
+    if (!takePicture(image) || !image.length()) {
         logEntry("Failed to take a picture", ENTITY_NAME, LogLevel::LOG_WARNING);
         return 0;
     }
 
-    char publication[1024] = {0};
-    snprintf(publication, 1024, "image=%s", image);
-    if (!publishMessage("api/image/request", publication)) {
+    std::string publication = "image=";
+    publication.append(image);
+    if (!publishMessage("api/image/request", publication.c_str())) {
         logEntry("Failed to send an image to AI server", ENTITY_NAME, LogLevel::LOG_WARNING);
         return 0;
     }

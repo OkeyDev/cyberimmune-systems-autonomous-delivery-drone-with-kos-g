@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <string>
 
 /**
  * \~English Enables the buzzer. The buzzer will automatically turn off in 2 seconds.
@@ -41,4 +42,4 @@ int setCargoLock(uint8_t enable);
  * \param[out] picture Снятое изображение в формате Base64.
  * \return Возвращает 1, если фотография была снята.
  */
-int takePicture(char* picture);
+int takePicture(std::string& picture);

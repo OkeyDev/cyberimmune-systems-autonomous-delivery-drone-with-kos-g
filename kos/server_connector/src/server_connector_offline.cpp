@@ -54,27 +54,27 @@ int requestServer(char* query, char* response, uint32_t responseSize) {
     return 1;
 }
 
-int publish(char* topic, char* publication) {
+int publish(char* topic, const std::string& publication) {
     if (strstr(topic, "api/arm/request"))
         armSend = true;
     else if (strstr(topic, "api/nmission/request"))
         newMissionSend = true;
     else if (strstr(topic, "api/image/request")) {
-        if (strstr(publication, "image=picture1"))
+        if (publication.find("image=picture1") != std::string::npos)
             scannedImage = 1;
-        else if (strstr(publication, "image=picture2"))
+        else if (publication.find("image=picture2") != std::string::npos)
             scannedImage = 2;
-        else if (strstr(publication, "image=picture3"))
+        else if (publication.find("image=picture3") != std::string::npos)
             scannedImage = 3;
         else
             scannedImage = 4;
     }
     else if (strstr(topic, "api/tag/request")) {
-        if (strstr(publication, "tag=A1"))
+        if (publication.find("tag=A1") != std::string::npos)
             sentTag = 1;
-        else if (strstr(publication, "tag=A2"))
+        else if (publication.find("tag=A2") != std::string::npos)
             sentTag = 2;
-        else if (strstr(publication, "tag=A3"))
+        else if (publication.find("tag=A3") != std::string::npos)
             sentTag = 3;
         else
             sentTag = 4;
