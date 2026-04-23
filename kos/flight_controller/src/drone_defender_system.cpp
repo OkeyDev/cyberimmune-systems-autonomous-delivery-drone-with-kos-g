@@ -270,3 +270,11 @@ void handleSpeedChange()
     changeSpeed(MAX_SPEED / 100);
   }
 }
+
+void updateDefenderSystem()
+{
+  updateCurrentWaypoint();
+  handleAltiduteChange();
+
+  handleSpeedChange();
+}

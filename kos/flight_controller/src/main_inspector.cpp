@@ -466,10 +466,6 @@ int main(void) {
   while (true) {
     // :(
     // updateCurrentWaypointMQTT();
-    updateCurrentWaypoint();
-    handleAltiduteChange();
-
-    handleSpeedChange();
 
     int32_t laltitude, longtitude, altitude;
     int result = getCoords(laltitude, longtitude, altitude);

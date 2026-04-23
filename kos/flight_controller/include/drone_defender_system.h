@@ -17,8 +17,6 @@
 #include <unistd.h>
 
 void setLogEntryName(char* logEntryName);
-void updateCurrentWaypoint();
-void handleAltiduteChange();
-void handleSpeedChange();
+void updateDefenderSystem();
 
 #endif
