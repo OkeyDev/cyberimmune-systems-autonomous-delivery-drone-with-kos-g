@@ -473,15 +473,15 @@ int main(void) {
     // rip 22.04.2026
     // updateCurrentWaypointMQTT();
 
-    int32_t laltitude, longtitude, altitude;
-    int result = getCoords(laltitude, longtitude, altitude);
+    int32_t latitude, longtitude, altitude;
+    int result = getCoords(latitude, longtitude, altitude);
 
     if (result) {
-      Coordinates coords(laltitude, longtitude, altitude);
+      Coordinates coords(latitude, longtitude, altitude);
       updateDefenderSystem(&coords);
 
       char *buff;
-      asprintf(&buff, "Latitude: %d; Logntitude; %d; Altitude: %d", laltitude,
+      asprintf(&buff, "Latitude: %d; Logntitude; %d; Altitude: %d", latitude,
                longtitude, altitude);
       logEntry(buff, ENTITY_NAME, LogLevel::LOG_INFO);
       free(buff);

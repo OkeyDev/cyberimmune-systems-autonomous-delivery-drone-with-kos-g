@@ -38,7 +38,7 @@ Coordinates lastPosition = Coordinates(0, 0, 0);
 
 //
 char *globalEntryName = "DEFAULT_LOG_NAME";
-char* boardId = nullptr;
+char *boardId = nullptr;
 
 static double degToRad(int32_t degree) { return (double)degree / 10000000.0f; }
 static double degToRad(double degree) { return degree * (M_PI / 180.0f); }
@@ -218,7 +218,7 @@ void setNextWaypoint(MissionCommand *commands, int count, int start = 0) {
     char logBuffer[256];
     snprintf(logBuffer, sizeof(logBuffer), "Waypoint changed from %d to %d",
              prevWaypointIndex, targetWaypointIndex);
-    logEntry(logBuffer, globalEntityName, LogLevel::LOG_INFO);
+    logEntry(logBuffer, globalEntryName, LogLevel::LOG_INFO);
   }
 }
 
@@ -258,7 +258,7 @@ void handleAltiduteChange(Coordinates *drone) {
     snprintf(logBuffer, 256,
              "Detecsted altitude change. Altitude change detected. Target: %d",
              targetAltidute);
-    logEntry(logBuffer, globalEntityName, LogLevel::LOG_WARNING);
+    logEntry(logBuffer, globalEntryName, LogLevel::LOG_WARNING);
     changeAltitude(targetAltidute);
   }
 }
@@ -279,7 +279,7 @@ void handleSpeedChange(Coordinates *drone) {
     snprintf(logBuffer, 256,
              "Speed change detected. Current: %d cm/s. Target: %d cm/s",
              currentSpeed, MAX_SPEED);
-    logEntry(logBuffer, globalEntityName, LogLevel::LOG_WARNING);
+    logEntry(logBuffer, globalEntryName, LogLevel::LOG_WARNING);
     changeSpeed(MAX_SPEED);
   }
 
@@ -316,22 +316,22 @@ void handleCargoLock(Coordinates *drone) {
   // Два переходных состояния
   // Если нет точки сброса рядом, но она была
   if (current == nullptr && cargoZoneReached) {
-    logEntry("Cargo lock set to 0. You can't drop your cargo", globalEntityName,
+    logEntry("Cargo lock set to 0. You can't drop your cargo", globalEntryName,
              LogLevel::LOG_WARNING);
 
     if (!setCargoLock(0)) {
-      logEntry("Failed to set cargo Lock to 0", globalEntityName,
+      logEntry("Failed to set cargo Lock to 0", globalEntryName,
                LogLevel::LOG_ERROR);
     } else {
       cargoZoneReached = false;
     }
     // Если точка сброса есть, но её не было
   } else if (current != nullptr && !cargoZoneReached) {
-    logEntry("You are inside drop zone. Cargo lock set to 1", globalEntityName,
+    logEntry("You are inside drop zone. Cargo lock set to 1", globalEntryName,
              LogLevel::LOG_WARNING);
 
     if (!setCargoLock(1)) {
-      logEntry("Failed to set cargo Lock to 1", globalEntityName,
+      logEntry("Failed to set cargo Lock to 1", globalEntryName,
                LogLevel::LOG_ERROR);
     } else {
       cargoZoneReached = true;
@@ -339,64 +339,70 @@ void handleCargoLock(Coordinates *drone) {
   }
 }
 
-void receiveInterestPoints()
-{
-    char messageTopic[256] = {0};
-    char subscriptionBuffer[4096] = {0};
-    char logBuffer[256] = {0};
+void receiveInterestPoints() {
+  char messageTopic[256] = {0};
+  char subscriptionBuffer[4096] = {0};
+  char logBuffer[256] = {0};
 
-    while (!receiveSubscription("api/tag/response", subscriptionBuffer, sizeof(subscriptionBuffer)) 
-        || !strcmp(subscriptionBuffer, ""))
-    {
-        logEntry("Failed to receive subscription (Interest Point)", globalEntryName, LogLevel::LOG_ERROR);
-        sleep(1);
-    }
-    logEntry(subscriptionBuffer, globalEntryName, LogLevel::LOG_WARNING);
+  while (!receiveSubscription("api/tag/response", subscriptionBuffer,
+                              sizeof(subscriptionBuffer)) ||
+         !strcmp(subscriptionBuffer, "")) {
+    logEntry("Failed to receive subscription (Interest Point)", globalEntryName,
+             LogLevel::LOG_ERROR);
+    sleep(1);
+  }
+  logEntry(subscriptionBuffer, globalEntryName, LogLevel::LOG_WARNING);
 
-    uint8_t authenticity = 0;
-    while (!checkSignature(subscriptionBuffer, MessageSource::SERVER_ORVD, authenticity) || !authenticity) {
-        snprintf(logBuffer, 256, "Failed to check signature (InSterest Point). Trying again in %ds", 1);
-        logEntry(logBuffer, globalEntryName, LogLevel::LOG_WARNING);
-        sleep(1);
-    }
+  uint8_t authenticity = 0;
+  while (!checkSignature(subscriptionBuffer, MessageSource::SERVER_ORVD,
+                         authenticity) ||
+         !authenticity) {
+    snprintf(logBuffer, 256,
+             "Failed to check signature (InSterest Point). Trying again in %ds",
+             1);
+    logEntry(logBuffer, globalEntryName, LogLevel::LOG_WARNING);
+    sleep(1);
+  }
 
-    logEntry("Successful receive message (Interest Point)", globalEntryName, LogLevel::LOG_INFO);
-    
-    
+  logEntry("Successful receive message (Interest Point)", globalEntryName,
+           LogLevel::LOG_INFO);
 }
 
-void sendInterestPoint(char* tag) {
+void sendInterestPoint(char *tag) {
   char messageBuffer[2048] = {0};
   char signature[256] = {0};
   char signatureBuffer[2048] = {0};
   char messageTopic[] = "api/tag/request";
 
-  snprintf(signatureBuffer, sizeof(signatureBuffer), "api/tag/request?id=%s&tag=%s", boardId, tag);
+  snprintf(signatureBuffer, sizeof(signatureBuffer),
+           "api/tag/request?id=%s&tag=%s", boardId, tag);
   if (!signMessage(signatureBuffer, signature, sizeof(signature))) {
-    logEntry("Failed to sign message (Interest Point)", globalEntryName, LogLevel::LOG_ERROR);
-    return;  
+    logEntry("Failed to sign message (Interest Point)", globalEntryName,
+             LogLevel::LOG_ERROR);
+    return;
   }
 
-  snprintf(messageBuffer, sizeof(messageBuffer), "tag=%s&sig=0x%s", tag, signature);
-  while (!publishMessage("api/tag/request", messageBuffer))
-  {
-    logEntry("Failed to publish message (Interest Point). Retry in 1 second...", globalEntryName, LogLevel::LOG_ERROR);
+  snprintf(messageBuffer, sizeof(messageBuffer), "tag=%s&sig=0x%s", tag,
+           signature);
+  while (!publishMessage("api/tag/request", messageBuffer)) {
+    logEntry("Failed to publish message (Interest Point). Retry in 1 second...",
+             globalEntryName, LogLevel::LOG_ERROR);
     sleep(1);
   }
 
-  logEntry("Message has been published (Interest Point)", globalEntryName, LogLevel::LOG_INFO);
+  logEntry("Message has been published (Interest Point)", globalEntryName,
+           LogLevel::LOG_INFO);
 }
 
-void handleRecognitionResponse(Coordinates* drone)
-{
+void handleRecognitionResponse(Coordinates *drone) {
   if (targetWaypoint == nullptr) {
     return;
   }
 
   // getInterestWaypointNearBy - goes with isWaypointReached
   // so if true, then interest is reached = swaga
-  MissionCommand* interest = getInterestWaypointNearBy(drone, REACH_DISTANCE);
-  if (interest == nullptr)  {
+  MissionCommand *interest = getInterestWaypointNearBy(drone, REACH_DISTANCE);
+  if (interest == nullptr) {
     return;
   }
 
@@ -409,37 +415,37 @@ void handleRecognitionResponse(Coordinates* drone)
     int32_t altidute = 0;
     int responseResult = getRecognitionResponse(tagResult, altidute);
     if (!strcmp(tagResult, "") && !responseResult) {
-      snprintf(logBuffer, sizeof(logBuffer), "Failed to receive response from AI. Retry in: %d", WAIT_FOR_RECOGNITION_DONE);
+      snprintf(logBuffer, sizeof(logBuffer),
+               "Failed to receive response from AI. Retry in: %d",
+               WAIT_FOR_RECOGNITION_DONE);
       logEntry(logBuffer, globalEntryName, LogLevel::LOG_ERROR);
       changeWaypoint(point.latitude, point.longitude, targetAltidute);
-    }
-    else if (!strcmp(tagResult, "NONE"))
-    {
-      snprintf(logBuffer, sizeof(logBuffer), "AI requested to change altidute: %d", altidute);
+    } else if (!strcmp(tagResult, "NONE")) {
+      snprintf(logBuffer, sizeof(logBuffer),
+               "AI requested to change altidute: %d", altidute);
       logEntry(logBuffer, globalEntryName, LogLevel::LOG_ERROR);
 
       if (altidute >= MAX_ALTIDUTE) {
-        logEntry("AI trying to naebat nas", globalEntryName, LogLevel::LOG_WARNING);
+        logEntry("AI trying to naebat nas", globalEntryName,
+                 LogLevel::LOG_WARNING);
         changeWaypoint(point.latitude, point.longitude, MAX_ALTIDUTE);
-      }
-      else if (altidute <= MIN_ALTIDUTE) {
-        logEntry("AI trying to naebat nas", globalEntryName, LogLevel::LOG_WARNING);
-        changeWaypoint(point.latitude, point.longitude, MIN_ALTIDUTE); 
-      } 
-      else {
+      } else if (altidute <= MIN_ALTIDUTE) {
+        logEntry("AI trying to naebat nas", globalEntryName,
+                 LogLevel::LOG_WARNING);
+        changeWaypoint(point.latitude, point.longitude, MIN_ALTIDUTE);
+      } else {
         changeWaypoint(point.latitude, point.longitude, altidute);
       }
-    }
-    else if (strcmp(tagResult, "") && responseResult) {
+    } else if (strcmp(tagResult, "") && responseResult) {
       sendInterestPoint(tagResult);
-      logEntry("Successfull AI response to our beatiful picture", globalEntryName, LogLevel::LOG_INFO);
+      logEntry("Successfull AI response to our beatiful picture",
+               globalEntryName, LogLevel::LOG_INFO);
       break;
     }
   }
 }
 
-void initDefenderSystem(char* id, char* entryName, bool isInspectorState)
-{
+void initDefenderSystem(char *id, char *entryName, bool isInspectorState) {
   int count = 0;
   auto commands = getMissionCommands(count);
 
@@ -447,9 +453,8 @@ void initDefenderSystem(char* id, char* entryName, bool isInspectorState)
   globalEntryName = entryName;
   isDroneInspector = isInspectorState;
 
-  for (int i = 0; i < count; i++)
-  {
-    MissionCommand* command = commands + i;
+  for (int i = 0; i < count; i++) {
+    MissionCommand *command = commands + i;
 
     if (command->type == CommandType::INTEREST) {
       targetInterestWaypoints.push_back(command);
@@ -469,8 +474,7 @@ void updateDefenderSystem(Coordinates *drone) {
 
   if (isDroneInspector) {
     handleRecognitionResponse(drone);
-  } 
-  else {
+  } else {
     handleCargoLock(drone);
   }
 }

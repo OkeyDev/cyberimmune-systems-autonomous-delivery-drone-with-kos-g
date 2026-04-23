@@ -26,10 +26,9 @@ public:
       : latitude(lat), longtitude(lon), altitude(alt) {}
 };
 
-void initDefenderSystem();
+void initDefenderSystem(char *id, char *entryName, bool isInspectorState);
 
 void setLogEntryName(char *logEntryName);
-void setInspectorState(bool state);
 
 void updateDefenderSystem(Coordinates *drone);
 
