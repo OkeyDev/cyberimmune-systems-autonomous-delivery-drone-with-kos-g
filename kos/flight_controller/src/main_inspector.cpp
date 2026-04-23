@@ -7,6 +7,8 @@
  */
 
 #include "../include/drone_defender_system.h"
+#include <cstdint>
+#include <unistd.h>
 
 /** \cond */
 #define RETRY_DELAY_SEC 1
@@ -68,7 +70,7 @@ void pingSession() {
       // until the response is received
 
       if (is_reconnecting) {
-        sleep(0.1);
+        sleep(1);
         continue;
       }
 
@@ -229,9 +231,10 @@ void forceSendMessage() {
   char logBuffer[256];
   char message[] = "HelloWorld";
 
-  while (!signMessage(message, messageSign, sizeof(messageSign)))
-  {
-    snprintf(logBuffer, sizeof(logBuffer), "Failed to sign message for sending to partner; Retry in %ds", RETRY_DELAY_SEC);
+  while (!signMessage(message, messageSign, sizeof(messageSign))) {
+    snprintf(logBuffer, sizeof(logBuffer),
+             "Failed to sign message for sending to partner; Retry in %ds",
+             RETRY_DELAY_SEC);
     logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_WARNING);
     sleep(RETRY_DELAY_SEC);
   }
@@ -239,7 +242,9 @@ void forceSendMessage() {
   snprintf(topicBuffer, sizeof(topicBuffer), "api/dm/%s", PARTNER_ID);
 
   while (!publishMessage(topicBuffer, messageBuffer)) {
-    snprintf(logBuffer, sizeof(logBuffer), "Failed publish message to %s. Retry in %ds", topicBuffer, RETRY_DELAY_SEC);
+    snprintf(logBuffer, sizeof(logBuffer),
+             "Failed publish message to %s. Retry in %ds", topicBuffer,
+             RETRY_DELAY_SEC);
     logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_WARNING);
   }
 
@@ -484,7 +489,8 @@ int main(void) {
       logEntry("Error while reading geoCoords", ENTITY_NAME,
                LogLevel::LOG_WARNING);
     }
-
+    Coordinates droneCoords = Coordinates(latitude, longtitude, altitude);
+    updateDefenderSystem(&droneCoords);
     sleep(1);
   }
 
