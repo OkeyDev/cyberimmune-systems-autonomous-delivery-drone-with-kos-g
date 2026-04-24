@@ -209,10 +209,10 @@ void handleIncorrectMovement(Coordinates *drone) {
            diff);
   // logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_INFO);
   if (restart_count > WAYPOINT_CHANGE_MAXIMUM_RETRIES) {
-    setKillSwitch(0);
+    // setKillSwitch(0);
     logEntry("Critical count received. It's time to kill the drone",
              ENTITY_NAME, LogLevel::LOG_CRITICAL);
-    isMissionEnded = true;
+    forcePauseFlight();
     return;
   }
 
