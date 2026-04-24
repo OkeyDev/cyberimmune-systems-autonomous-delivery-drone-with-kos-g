@@ -197,7 +197,7 @@ void handleIncorrectMovement(Coordinates *drone) {
     return;
   }
 
-  double diff = previousDistance - currentDist;
+  double diff = currentDist - previousDistance;
   // Если значение положительное, значит дрон приближается
   // Отриццательное - быть беде
 
@@ -214,7 +214,7 @@ void handleIncorrectMovement(Coordinates *drone) {
     return;
   }
 
-  if (previousDistance - currentDist < DISTANCE_INCORRECT_MOVEMENT) {
+  if (diff < DISTANCE_INCORRECT_MOVEMENT) {
     char message[128];
 
     const CommandWaypoint content = waypoint->content.waypoint;
