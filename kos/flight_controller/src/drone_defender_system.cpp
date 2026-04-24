@@ -7,14 +7,13 @@
 #include <unistd.h>
 #include <vector>
 
-#define ALTITUDE_EPSILON 10
 // Разниа расстояний между точкой и дроном за этот и предыдущий цикл
 // для определения неверного направления движения
 #define DISTANCE_INCORRECT_MOVEMENT -0.75f
 // Для крит задачи, максимальное количество попыток до killSwitch()
-#define WAYPOINT_CHANGE_MAXIMUM_RETRIES 6
+#define WAYPOINT_CHANGE_MAXIMUM_RETRIES 9999
 // Максимально допустимая скорость (в см/с)
-#define MAX_SPEED 50
+#define MAX_SPEED 100
 #define MAX_ALTIDUTE 150
 #define MIN_ALTIDUTE 55
 
@@ -334,7 +333,7 @@ void handleSpeedChange(Coordinates *drone) {
   snprintf(logBuffer, sizeof(logBuffer),
            "Current speed is: %f; dist: %f; diff: %f", currentSpeed, dist,
            (double)UPDATE_DELAY / 1000.0f);
-  logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_INFO);
+  // logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_INFO);
   if (currentSpeed > MAX_SPEED) {
     snprintf(logBuffer, 256,
              "Speed change detected. Current: %f cm/s. Target: %d cm/s",

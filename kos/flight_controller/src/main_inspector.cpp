@@ -282,6 +282,8 @@ MissionCommand *getInterestWaypoint(Coordinates *drone,
       break;
     }
   }
+
+  return current;
 }
 enum RecognitionStatus {
   REC_WAIT_POSITION,
