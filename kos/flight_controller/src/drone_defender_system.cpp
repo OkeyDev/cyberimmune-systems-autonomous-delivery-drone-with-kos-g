@@ -10,7 +10,7 @@
 // для определения неверного направления движения
 #define DISTANCE_INCORRECT_MOVEMENT -0.1f
 // Для крит задачи, максимальное количество попыток до killSwitch()
-#define WAYPOINT_CHANGE_MAXIMUM_RETRIES 9999
+#define WAYPOINT_CHANGE_MAXIMUM_RETRIES 4
 // Максимально допустимая скорость (в см/с)
 #define MAX_SPEED 60
 #define MAX_ALTIDUTE 150
