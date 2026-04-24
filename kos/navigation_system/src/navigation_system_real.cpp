@@ -70,8 +70,8 @@ int writeRegister(uint8_t reg, uint8_t val) {
     messages[0].buf = buf;
     messages[0].len = 2;
 
-    Retcode rc = I2cXfer(barometerHandler, 400000, messages, 1);
-    if (rc != rcOk)
+    I2cError rc = I2cXfer(barometerHandler, 400000, messages, 1);
+    if (I2C_FAIL(rc))
         return 0;
 #endif
 
@@ -105,7 +105,7 @@ int readRegister16(uint8_t reg, uint8_t* val) {
     messages[1].len = 2;
 
     I2cError rc = I2cXfer(barometerHandler, 400000, messages, 2);
-    if (rc != rcOk)
+    if (I2C_FAIL(rc))
         return 0;
 
     val[0] = readBuffer[0];
@@ -136,7 +136,7 @@ int readRegister24(uint8_t reg, int32_t &val) {
     uint8_t readBuffer[3];
 
     messages[0].addr = 0x76;
-    messages[0].flags = 0;
+    messages[0].flags = I2C_MASTER_WRITE;
     messages[0].buf = writeBuffer;
     messages[0].len = 1;
 
@@ -146,8 +146,9 @@ int readRegister24(uint8_t reg, int32_t &val) {
     messages[1].len = 3;
 
     I2cError rc = I2cXfer(barometerHandler, 400000, messages, 2);
-    if (rc != rcOk)
+    if (I2C_FAIL(rc))
         return 0;
+
     val = ((int32_t)(readBuffer[0]) << 12) | ((int32_t)(readBuffer[1]) << 4) | ((int32_t)(readBuffer[2]) >> 4);
 #endif
 
@@ -418,6 +419,12 @@ int initNavigationSystem() {
     rc = BspEnableModule(barometerI2C);
     if (rc != rcOk) {
         snprintf(logBuffer, 256, "Failed to enable I2C %s (" RETCODE_HR_FMT ")", barometerI2C, RETCODE_HR_PARAMS(rc));
+        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
+        return 0;
+    }
+    rc = BspSetConfig(barometerI2C, "rpi4_bcm2711.p2-3");
+    if (rc != rcOk) {
+        snprintf(logBuffer, 256, "Failed to set I2C config (" RETCODE_HR_FMT ")", RETCODE_HR_PARAMS(rc));
         logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_ERROR);
         return 0;
     }
