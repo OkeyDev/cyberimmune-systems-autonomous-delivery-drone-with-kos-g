@@ -38,7 +38,7 @@ Coordinates lastPosition = Coordinates(0, 0, 0);
 
 //
 char *globalEntryName = "DEFAULT_LOG_NAME";
-char *boardId = nullptr;
+char *boardDroneId = nullptr;
 
 static double degToRad(int32_t degree) { return (double)degree / 10000000.0f; }
 static double degToRad(double degree) { return degree * (M_PI / 180.0f); }
@@ -375,7 +375,7 @@ void sendInterestPoint(char *tag) {
   char messageTopic[] = "api/tag/request";
 
   snprintf(signatureBuffer, sizeof(signatureBuffer),
-           "api/tag/request?id=%s&tag=%s", boardId, tag);
+           "api/tag/request?id=%s&tag=%s", boardDroneId, tag);
   if (!signMessage(signatureBuffer, signature, sizeof(signature))) {
     logEntry("Failed to sign message (Interest Point)", globalEntryName,
              LogLevel::LOG_ERROR);
@@ -449,7 +449,7 @@ void initDefenderSystem(char *id, char *entryName, bool isInspectorState) {
   int count = 0;
   auto commands = getMissionCommands(count);
 
-  boardId = id;
+  boardDroneId = id;
   globalEntryName = entryName;
   isDroneInspector = isInspectorState;
 
