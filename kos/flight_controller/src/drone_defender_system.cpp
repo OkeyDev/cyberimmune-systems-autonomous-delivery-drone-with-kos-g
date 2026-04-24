@@ -229,6 +229,7 @@ void handleIncorrectMovement(Coordinates *drone) {
     logEntry(message, globalEntryName, LogLevel::LOG_WARNING);
 
     changeWaypoint(content.latitude, content.longitude, content.altitude);
+    restart_count += 1;
   } else {
     restart_count = 0;
   }
