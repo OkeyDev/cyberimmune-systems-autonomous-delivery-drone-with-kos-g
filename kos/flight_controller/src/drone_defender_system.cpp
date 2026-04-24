@@ -1,20 +1,20 @@
 #include "../include/drone_defender_system.h"
 
+#include <chrono>
 #include <cstdint>
 #include <cstdio>
+#include <thread>
 #include <unistd.h>
 #include <vector>
 
 #define ALTITUDE_EPSILON 10
 // Разниа расстояний между точкой и дроном за этот и предыдущий цикл
 // для определения неверного направления движения
-#define DISTANCE_INCORRECT_MOVEMENT -0.5f
+#define DISTANCE_INCORRECT_MOVEMENT -0.75f
 // Для крит задачи, максимальное количество попыток до killSwitch()
 #define WAYPOINT_CHANGE_MAXIMUM_RETRIES 6
 // Расстояние (в м) при котором считается что дрон достиг необходимой точки
 #define REACH_DISTANCE 0.75
-// Ожидание между обновлениями (в мс)
-#define UPDATE_DELAY 500
 // Максимально допустимая скорость (в см/с)
 #define MAX_SPEED 100
 #define MAX_ALTIDUTE 150
@@ -566,14 +566,9 @@ void updateDefenderSystem(Coordinates *drone) {
 
     handleCargoLock(drone);
   }
-  if (isDroneInspector) {
-    // handleRecognitionResponse(drone);
-  } else {
-    handleCargoLock(drone);
-  }
 }
 
-void updateDefenderSysmteLoop() {
+void updateDefenderSystemLoop() {
   while (true) {
     int32_t latitude, longtitude, altitude;
     if (!getCoords(latitude, longtitude, altitude)) {
@@ -582,6 +577,6 @@ void updateDefenderSysmteLoop() {
       Coordinates drone(latitude, longtitude, altitude);
       updateDefenderSystem(&drone);
     }
-    usleep(UPDATE_DELAY);
+    std::this_thread::sleep_for(std::chrono::milliseconds(UPDATE_DELAY));
   }
 }

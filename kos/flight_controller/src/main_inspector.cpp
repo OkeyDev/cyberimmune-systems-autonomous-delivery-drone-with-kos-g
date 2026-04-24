@@ -8,6 +8,7 @@
 
 #include "../include/drone_defender_system.h"
 #include <cstdint>
+#include <thread>
 #include <unistd.h>
 
 /** \cond */
@@ -483,7 +484,7 @@ int main(void) {
       logEntry("Error while reading geoCoords", ENTITY_NAME,
                LogLevel::LOG_WARNING);
     }
-    sleep(1);
+    std::this_thread::sleep_for(std::chrono::milliseconds(UPDATE_DELAY));
   }
 
   return EXIT_SUCCESS;

@@ -16,6 +16,9 @@
 #include <thread>
 #include <unistd.h>
 
+// Ожидание между обновлениями (в мс)
+#define UPDATE_DELAY 500
+
 class Coordinates {
 public:
   int32_t latitude;
@@ -31,5 +34,6 @@ void initDefenderSystem(char *id, char *entryName, bool isInspectorState);
 void setLogEntryName(char *logEntryName);
 
 void updateDefenderSystem(Coordinates *drone);
+void updateDefenderSystemLoop();
 
 #endif
