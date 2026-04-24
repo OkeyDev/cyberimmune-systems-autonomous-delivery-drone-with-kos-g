@@ -16,7 +16,7 @@
 // Расстояние (в м) при котором считается что дрон достиг необходимой точки
 #define REACH_DISTANCE 0.75
 // Максимально допустимая скорость (в см/с)
-#define MAX_SPEED 100
+#define MAX_SPEED 50
 #define MAX_ALTIDUTE 150
 #define MIN_ALTIDUTE 55
 
@@ -319,12 +319,16 @@ void handleSpeedChange(Coordinates *drone) {
 
   double dist = calcDistance(drone->latitude, drone->longtitude,
                              lastPosition.latitude, lastPosition.longtitude);
-  int32_t currentSpeed = dist * (100.0f / 1000.0f) / UPDATE_DELAY;
+  double currentSpeed = dist * 100.0f / ((double)UPDATE_DELAY / 1000.0f);
 
   char logBuffer[256];
+  snprintf(logBuffer, sizeof(logBuffer),
+           "Current speed is: %f; dist: %f; diff: %f", currentSpeed, dist,
+           (double)UPDATE_DELAY / 1000.0f);
+  logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_INFO);
   if (currentSpeed > MAX_SPEED) {
     snprintf(logBuffer, 256,
-             "Speed change detected. Current: %d cm/s. Target: %d cm/s",
+             "Speed change detected. Current: %f cm/s. Target: %d cm/s",
              currentSpeed, MAX_SPEED);
     logEntry(logBuffer, globalEntryName, LogLevel::LOG_WARNING);
     changeSpeed(MAX_SPEED);
