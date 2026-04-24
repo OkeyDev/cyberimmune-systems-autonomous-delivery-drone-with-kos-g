@@ -479,18 +479,10 @@ int main(void) {
     if (result) {
       Coordinates coords(latitude, longtitude, altitude);
       updateDefenderSystem(&coords);
-
-      char *buff;
-      asprintf(&buff, "Latitude: %d; Logntitude; %d; Altitude: %d", latitude,
-               longtitude, altitude);
-      logEntry(buff, ENTITY_NAME, LogLevel::LOG_INFO);
-      free(buff);
     } else {
       logEntry("Error while reading geoCoords", ENTITY_NAME,
                LogLevel::LOG_WARNING);
     }
-    Coordinates droneCoords = Coordinates(latitude, longtitude, altitude);
-    updateDefenderSystem(&droneCoords);
     sleep(1);
   }
 

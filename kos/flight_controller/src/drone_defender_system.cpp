@@ -1,19 +1,25 @@
 #include "../include/drone_defender_system.h"
 
 #include <cstdint>
+#include <cstdio>
+#include <unistd.h>
 #include <vector>
 
 #define ALTITUDE_EPSILON 10
-#define DISTANCE_EPSILON 1.2f
+// Разниа расстояний между точкой и дроном за этот и предыдущий цикл
+// для определения неверного направления движения
+#define DISTANCE_INCORRENT_MOVEMENT -0.5f
 // Расстояние (в м) при котором считается что дрон достиг необходимой точки
 #define REACH_DISTANCE 0.75
-#define UPDATE_DELAY 1
+// Ожидание между обновлениями (в мс)
+#define UPDATE_DELAY 500
 // Максимально допустимая скорость (в см/с)
 #define MAX_SPEED 100
 #define MAX_ALTIDUTE 150
 #define MIN_ALTIDUTE 55
 
 // in m (or not?)
+// Радиус вокруг точки для запуска разблокировки грузчика
 #define CARGOLOCK_ENABLE_DISTANCE 1
 
 // in seconds
@@ -35,10 +41,16 @@ int32_t lastCoordX = 0;
 int32_t lastCoordY = 0;
 
 Coordinates lastPosition = Coordinates(0, 0, 0);
+bool isFlightStarted = false;
+bool isMissionEnded = false;
 
 //
 char *globalEntryName = "DEFAULT_LOG_NAME";
 char *boardDroneId = nullptr;
+
+#ifndef ENTITY_NAME
+#define ENTITY_NAME ""
+#endif
 
 static double degToRad(int32_t degree) { return (double)degree / 10000000.0f; }
 static double degToRad(double degree) { return degree * (M_PI / 180.0f); }
@@ -89,6 +101,12 @@ bool isWaypointReached(Coordinates *drone, CommandWaypoint waypoint,
   }
   return 0;
 }
+
+void forcePauseFlight() {
+  pauseFlight();
+  isMissionEnded = true;
+}
+void forceContinueFlight() { resumeFlight(); }
 
 MissionCommand *getInterestWaypointNearBy(Coordinates *drone, double distance) {
 
@@ -159,6 +177,8 @@ double computeBearing(Coordinates *from, Coordinates *to) {
   return normalizeAngle(bearing_deg);
 }
 
+double previousDistance = 0;
+
 void handleIncorrectMovement(Coordinates *drone) {
   MissionCommand *waypoint = getCurrentWaypoint();
 
@@ -169,20 +189,33 @@ void handleIncorrectMovement(Coordinates *drone) {
   if (isWaypointReached(drone, waypoint->content.waypoint, REACH_DISTANCE))
     return;
 
-  Coordinates coord = Coordinates(waypoint->content.waypoint.latitude,
-                                  waypoint->content.waypoint.longitude,
-                                  waypoint->content.waypoint.altitude);
-  double deg = computeBearing(drone, &coord);
+  double currentDist = calcDistance(drone->latitude, drone->longtitude,
+                                    waypoint->content.waypoint.latitude,
+                                    waypoint->content.waypoint.longitude);
+  if (previousDistance == 0) {
+    previousDistance = currentDist;
+    return;
+  }
 
-  if (std::abs(deg) > 30) {
+  double diff = previousDistance - currentDist;
+  // Если значение положительное, значит дрон приближается
+  // Отриццательное - быть беде
+
+  char logBuffer[256];
+  snprintf(logBuffer, sizeof(logBuffer),
+           "Current distance difference to point %d is %f", targetWaypointIndex,
+           diff);
+  // logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_INFO);
+
+  if (previousDistance - currentDist < DISTANCE_INCORRENT_MOVEMENT) {
     char message[128];
 
     const CommandWaypoint content = waypoint->content.waypoint;
 
     snprintf(message, sizeof(message),
              "Handle incorrect flight behaviour. Changing waypoint: %d, %d, "
-             "%d; Deg: %f",
-             content.latitude, content.longitude, content.altitude, deg);
+             "%d; Diff: %f",
+             content.latitude, content.longitude, content.altitude, diff);
 
     logEntry(message, globalEntryName, LogLevel::LOG_WARNING);
 
@@ -204,7 +237,7 @@ void setNextWaypoint(MissionCommand *commands, int count, int start = 0) {
       lastWaypoint = targetWaypoint;
       targetWaypoint = command;
       setTargetAltitude(command->content.waypoint.altitude);
-      return;
+      break;
     }
   }
 
@@ -214,6 +247,7 @@ void setNextWaypoint(MissionCommand *commands, int count, int start = 0) {
     lastWaypoint = nullptr;
     targetWaypoint = nullptr;
     setTargetAltitude(0);
+    isMissionEnded = true;
   } else {
     char logBuffer[256];
     snprintf(logBuffer, sizeof(logBuffer), "Waypoint changed from %d to %d",
@@ -255,9 +289,10 @@ void handleAltiduteChange(Coordinates *drone) {
   // snprintf(logBuffer, 256, "req: %d; current: %d;", targetAltidute,
   // altitude);
   if (std::abs(targetAltidute - drone->altitude) > ALTITUDE_EPSILON) {
-    snprintf(logBuffer, 256,
-             "Detecsted altitude change. Altitude change detected. Target: %d",
-             targetAltidute);
+    snprintf(
+        logBuffer, 256,
+        "Detecsted altitude change. Altitude change detected to %d. Target: %d",
+        drone->altitude, targetAltidute);
     logEntry(logBuffer, globalEntryName, LogLevel::LOG_WARNING);
     changeAltitude(targetAltidute);
   }
@@ -272,7 +307,7 @@ void handleSpeedChange(Coordinates *drone) {
 
   double dist = calcDistance(drone->latitude, drone->longtitude,
                              lastPosition.latitude, lastPosition.longtitude);
-  int32_t currentSpeed = dist * 100 / UPDATE_DELAY;
+  int32_t currentSpeed = dist * (100.0f / 1000.0f) / UPDATE_DELAY;
 
   char logBuffer[256];
   if (currentSpeed > MAX_SPEED) {
@@ -445,6 +480,52 @@ void handleRecognitionResponse(Coordinates *drone) {
   }
 }
 
+bool isMissionRunning(Coordinates *drone) {
+  // Waiting for drone to land
+  if (isMissionEnded) {
+    if (drone->altitude < ALTITUDE_EPSILON) {
+      logEntry("Mission ended. Waiting for new one", ENTITY_NAME,
+               LogLevel::LOG_INFO);
+      isFlightStarted = false;
+      isMissionEnded = false;
+    }
+    return false;
+  }
+  if (isFlightStarted == true)
+    return true;
+
+  int count = 0;
+  auto commands = getMissionCommands(count);
+
+  MissionCommand *takeoff_command = nullptr;
+
+  for (int i = 0; i < count; i++) {
+    if (commands[i].type == CommandType::TAKEOFF) {
+      takeoff_command = commands + i;
+      break;
+    }
+  }
+  if (takeoff_command == nullptr)
+    return false;
+
+  int32_t expectedAltitude = takeoff_command->content.takeoff.altitude;
+  char logBuffer[256];
+  snprintf(logBuffer, sizeof(logBuffer), "Current altitude: %d - %d = %d",
+           expectedAltitude, drone->altitude,
+           std::abs(expectedAltitude - drone->altitude));
+  // logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_INFO);
+  // TODO: logs
+
+  if (std::abs(expectedAltitude - drone->altitude) > ALTITUDE_EPSILON) {
+    return false;
+  } else {
+    logEntry("Mission start detected. Enable security rules", ENTITY_NAME,
+             LogLevel::LOG_INFO);
+    isFlightStarted = true;
+    return true;
+  }
+}
+
 void initDefenderSystem(char *id, char *entryName, bool isInspectorState) {
   int count = 0;
   auto commands = getMissionCommands(count);
@@ -463,18 +544,32 @@ void initDefenderSystem(char *id, char *entryName, bool isInspectorState) {
 }
 
 void updateDefenderSystem(Coordinates *drone) {
-  if (!disableWaypointUpdate) {
-    updateCurrentWaypoint(drone);
+  if (isMissionRunning(drone)) {
+    if (!disableWaypointUpdate) {
+      updateCurrentWaypoint(drone);
+    }
+    handleIncorrectMovement(drone);
+    handleAltiduteChange(drone);
+    handleSpeedChange(drone);
+
+    handleCargoLock(drone);
   }
-  // handleIncorrectMovement(drone);
-  handleAltiduteChange(drone);
-  handleSpeedChange(drone);
-
-  handleCargoLock(drone);
-
   if (isDroneInspector) {
-    handleRecognitionResponse(drone);
+    // handleRecognitionResponse(drone);
   } else {
     handleCargoLock(drone);
+  }
+}
+
+void updateDefenderSysmteLoop() {
+  while (true) {
+    int32_t latitude, longtitude, altitude;
+    if (!getCoords(latitude, longtitude, altitude)) {
+      logEntry("Failed to get GPS Coords", ENTITY_NAME, LogLevel::LOG_CRITICAL);
+    } else {
+      Coordinates drone(latitude, longtitude, altitude);
+      updateDefenderSystem(&drone);
+    }
+    usleep(UPDATE_DELAY);
   }
 }
