@@ -314,7 +314,40 @@ int parseAreas(char *str) {
       }
   }
 
-  return 1;
+    for (int i = 0; i < areaNum; i++) {
+        char* nameEnd = strstr(str, "&");
+        if (nameEnd == NULL) {
+            char logBuffer[256];
+            snprintf(logBuffer, 256, "Failed to parse a name of no-flight area %d", i + 1);
+            logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_WARNING);
+            return 0;
+        }
+        int nameLen = nameEnd - str;
+        if (nameLen > AREA_NAME_MAX_LEN)
+            nameLen = AREA_NAME_MAX_LEN;
+        strncpy(areas[i].name, str, nameLen);
+        areas[i].name[nameLen] = '\0';
+        str = nameEnd + 1;
+        int32_t pointNum;
+        if (!parseInt(str, pointNum, 0)) {
+            char logBuffer[256];
+            snprintf(logBuffer, 256, "Failed to parse a number of no-flight area %d points", i + 1);
+            logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_WARNING);
+            return 0;
+        }
+        areas[i].pointNum = pointNum;
+        areas[i].points = (Point2D*)malloc(pointNum * sizeof(Point2D));
+
+        for (int j = 0; j < pointNum; j++)
+            if (!parseInt(str, areas[i].points[j].latitude, 7) || !parseInt(str, areas[i].points[j].longitude, 7)) {
+                char logBuffer[256];
+                snprintf(logBuffer, 256, "Failed to parse point %d of no-flight area %d", j + 1, i + 1);
+                logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_WARNING);
+                return 0;
+            }
+    }
+
+    return 1;
 }
 
 /**

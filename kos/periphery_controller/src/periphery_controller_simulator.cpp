@@ -22,7 +22,7 @@
 
 /** \cond */
 #define SIM_PERIPHERY_MESSAGE_HEAD_SIZE 4
-#define TAG_NUM 3
+#define TAG_NUM 8
 
 static const uint8_t SimPeripheryMessageHead[SIM_PERIPHERY_MESSAGE_HEAD_SIZE] = { 0x06, 0x66, 0xbe, 0xa7 };
 /** \endcond */
@@ -110,9 +110,9 @@ uint16_t peripheryPort = 5767;
 float scanSquaredDistance = 0.25;
 float latScale = 0.011131884502145f;
 float lngScale = 0.011131884502145f;
-int32_t tagLats[TAG_NUM] = { 600024368, 600024166, 600024428 };
-int32_t tagLngs[TAG_NUM] = { 278576362, 278576914, 278577035 };
-char tagPictures[TAG_NUM][9] = { "picture1", "picture2", "picture3" };
+int32_t tagLats[TAG_NUM] = { 556472849, 556472867, 556472741, 556473298, 556472419, 556472445, 556472291, 556471932 };
+int32_t tagLngs[TAG_NUM] = { 375163815, 375164038, 375164069, 375163816, 375163240, 375163972, 375164863, 375164384 };
+char tagPictures[TAG_NUM][9] = { "picture1", "picture2", "picture3", "picture4", "picture5", "picture6", "picture7", "picture8" };
 
 bool killSwitchEnabled;
 /** \endcond */
