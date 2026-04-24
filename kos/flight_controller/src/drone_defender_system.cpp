@@ -13,8 +13,6 @@
 #define DISTANCE_INCORRECT_MOVEMENT -0.75f
 // Для крит задачи, максимальное количество попыток до killSwitch()
 #define WAYPOINT_CHANGE_MAXIMUM_RETRIES 6
-// Расстояние (в м) при котором считается что дрон достиг необходимой точки
-#define REACH_DISTANCE 0.75
 // Максимально допустимая скорость (в см/с)
 #define MAX_SPEED 50
 #define MAX_ALTIDUTE 150
@@ -236,6 +234,17 @@ void handleIncorrectMovement(Coordinates *drone) {
 }
 
 void setTargetAltitude(int32_t altitude) { targetAltidute = altitude; }
+
+MissionCommand *previousCommand = nullptr;
+void forceSetTargetWaypoint(MissionCommand *command) {
+  previousCommand = targetWaypoint;
+  disableWaypointUpdate = true;
+}
+
+void retrunTargetWaypointBack() {
+  targetWaypoint = previousCommand;
+  disableWaypointUpdate = false;
+}
 
 void setNextWaypoint(MissionCommand *commands, int count, int start = 0) {
   auto prevWaypoint = targetWaypoint;

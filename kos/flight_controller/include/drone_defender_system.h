@@ -8,6 +8,7 @@
 #include "../../shared/include/ipc_messages_server_connector.h"
 #include "../include/flight_controller.h"
 
+#include <cstdint>
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
@@ -16,8 +17,15 @@
 #include <thread>
 #include <unistd.h>
 
+// Погресть в cm при определении высоты
+#define ALTITUDE_EPSILON 10
 // Ожидание между обновлениями (в мс)
 #define UPDATE_DELAY 500
+// Расстояние (в м) при котором считается что дрон достиг необходимой точки
+#define REACH_DISTANCE 0.75
+
+#define MAX_ALTIDUTE 150
+#define MIN_ALTIDUTE 55
 
 class Coordinates {
 public:
@@ -30,10 +38,16 @@ public:
 };
 
 void initDefenderSystem(char *id, char *entryName, bool isInspectorState);
+bool isWaypointReached(Coordinates *drone, CommandWaypoint waypoint,
+                       double distance);
 
 void setLogEntryName(char *logEntryName);
 
 void updateDefenderSystem(Coordinates *drone);
 void updateDefenderSystemLoop();
+
+void setTargetAltitude(int32_t altitude);
+void forceSetTargetWaypoint(MissionCommand *command);
+void retrunTargetWaypointBack();
 
 #endif

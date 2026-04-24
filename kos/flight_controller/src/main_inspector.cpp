@@ -7,7 +7,11 @@
  */
 
 #include "../include/drone_defender_system.h"
+#include <cmath>
 #include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <sys/types.h>
 #include <thread>
 #include <unistd.h>
 
@@ -267,6 +271,215 @@ void forceSendMessage() {
  * двигатели. Далее должен выполняться контроль полета.
  * \return Возвращает 1 при завершении без ошибок.
  */
+
+MissionCommand *getInterestWaypoint(Coordinates *drone,
+                                    MissionCommand *interestPoints, int count) {
+  MissionCommand *current = nullptr;
+  for (int i = 0; i < count; i++) {
+    if (isWaypointReached(drone, interestPoints[i].content.waypoint,
+                          REACH_DISTANCE)) {
+      current = interestPoints + count;
+      break;
+    }
+  }
+}
+enum RecognitionStatus {
+  REC_WAIT_POSITION,
+  REC_SEND_REQUEST,
+  REC_WAIT_FOR_RESPONSE,
+  REC_CHANGE_ALTUTIDE,
+  REC_PUBLISH_TAG,
+  REC_WAIT_FOR_TAG,
+  REC_STOP,
+  REC_STOPPED,
+};
+
+RecognitionStatus recStatus;
+char tagResult[4096];
+int32_t altitude;
+
+void recognize(Coordinates *drone, MissionCommand *interestPoints, int count) {
+  /* Tag Recognition */
+  // Tag recognition is done via AI-driven recognition server.
+  // First, the request should be done with 'requestRecognition' function.
+  // It takes picture with a camera and sends it to AI-driven recognition
+  // server. The response could be received with 'getRecognitionResponse'. Note,
+  // that result may not be ready immediately. It returns recognized symbol or
+  // 'NONE' with an altitude value to take a better picture.
+
+  /* Delivery Point Determination */
+  // If the symbol is recognized it should be sent to the ORVD server.
+  // Calculate a signature for message "/api/tag/request?id={boardId}&tag={Tag}"
+  // with 'signMessage'. Send message "tag={Tag}&sig=0x{signature}" to the topic
+  // "api/tag/request" with 'publishMessage'. Receive the response from the
+  // topic "api/tag/response/" with 'receiveSubscription'. Signature of the
+  // received message can be checked with 'checkSignature'. If the response
+  // contains "$TRUE {Tag}#" than the tag is cargo destination, if it contains
+  // "$FALSE {Tag}#", than the tag is not the destination point (or wrong tag),
+  // if it contains "$ACCEPTED {Tag}#", than the bonus tag was accepted.
+
+  /* Send message to deliverer */
+  // Calculate a signature for your message {Message} with 'signMessage'.
+  // Content of {Message} is not specified and can be in any form.
+  // Send message "{Message}#{Signature}" to the topic "api/dm/{PARTNER_ID}"
+  // with 'publishMessage'.
+
+  MissionCommand *current = getInterestWaypoint(drone, interestPoints, count);
+
+  if (current == nullptr && recStatus != REC_WAIT_POSITION) {
+    logEntry("The drone is out of recognize zone", ENTITY_NAME,
+             LogLevel::LOG_WARNING);
+
+    recStatus = REC_WAIT_POSITION;
+    retrunTargetWaypointBack();
+    return;
+  } else if (current != nullptr && recStatus == REC_WAIT_POSITION) {
+    logEntry("Found interest waypoint. Setting force move to it.", ENTITY_NAME,
+             LogLevel::LOG_INFO);
+    forceSetTargetWaypoint(current);
+    recStatus = REC_SEND_REQUEST;
+  } else if (current == nullptr)
+    return;
+  if (recStatus == REC_STOP) {
+    retrunTargetWaypointBack();
+    recStatus = REC_STOPPED;
+    return;
+  }
+
+  char logBuffer[256] = {0};
+  if (recStatus == REC_CHANGE_ALTUTIDE) {
+    snprintf(logBuffer, sizeof(logBuffer),
+             "Changing altidute. Current: %d. Target: %d", drone->altitude,
+             altitude);
+
+    if (std::abs(drone->altitude - altitude) < ALTITUDE_EPSILON) {
+      recStatus = REC_SEND_REQUEST;
+    } else {
+      return;
+    }
+  }
+
+  if (recStatus == REC_SEND_REQUEST) {
+    if (!requestRecognition()) {
+      logEntry("Failed to send request for recognition from AI", ENTITY_NAME,
+               LogLevel::LOG_INFO);
+
+      return;
+    }
+    recStatus = REC_WAIT_FOR_RESPONSE;
+  }
+
+  if (recStatus == REC_WAIT_FOR_RESPONSE) {
+    if (!getRecognitionResponse(logBuffer, altitude)) {
+      logEntry("Failed to get recognition response", ENTITY_NAME,
+               LogLevel::LOG_WARNING);
+      return;
+    }
+    if (!strcmp(tagResult, "")) {
+      logEntry("No response from server. Waiting", ENTITY_NAME,
+               LogLevel::LOG_INFO);
+      return;
+    }
+
+    if (strstr(tagResult, "NONE") != nullptr) {
+      altitude = altitude * 100;
+      auto alt = altitude;
+      if (altitude >= MAX_ALTIDUTE)
+        altitude = MAX_ALTIDUTE;
+      else if (altitude <= MIN_ALTIDUTE)
+        altitude = MIN_ALTIDUTE;
+
+      snprintf(logBuffer, sizeof(logBuffer),
+               "None response from recognition serivce. Alt: %d. Changing "
+               "altitude to %d",
+               alt, altitude);
+      logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_INFO);
+
+      recStatus = REC_CHANGE_ALTUTIDE;
+      setTargetAltitude(altitude);
+      return;
+    }
+
+    recStatus = REC_PUBLISH_TAG;
+  }
+
+  if (recStatus == REC_PUBLISH_TAG) {
+    char signature[257] = {0};
+    char signatureBuffer[2048] = {0};
+    char messageTopic[] = "api/tag/request";
+
+    snprintf(signatureBuffer, sizeof(signatureBuffer),
+             "api/tag/request?id=%s&tag=%s", boardId, tagResult);
+
+    if (!signMessage(signatureBuffer, signature, sizeof(signature))) {
+      logEntry("Failed to sign message (recognition)", ENTITY_NAME,
+               LogLevel ::LOG_WARNING);
+      return;
+    }
+
+    snprintf(tagResult, sizeof(tagResult), "tag=%s&sig=0x%s", tagResult,
+             signature);
+    if (!publishMessage("api/tag/request", tagResult)) {
+      logEntry("Failed to publish message to api/tag/request", ENTITY_NAME,
+               LogLevel::LOG_WARNING);
+      return;
+    }
+
+    logEntry("Request sent to ORVD. Waiting for response", ENTITY_NAME,
+             LogLevel::LOG_INFO);
+
+    recStatus = REC_WAIT_FOR_TAG;
+  }
+
+  char messageBuffer[2048];
+  char cmpBuffer[2048];
+  if (recStatus == REC_WAIT_FOR_TAG) {
+    if (!receiveSubscription("api/tag/respone", messageBuffer,
+                             sizeof(messageBuffer))) {
+      logEntry("Failed to receive subscription", ENTITY_NAME,
+               LogLevel::LOG_WARNING);
+      return;
+    }
+    if (!strcmp(messageBuffer, "")) {
+      logEntry("Empty answer from ORVD. Waiting", ENTITY_NAME,
+               LogLevel::LOG_INFO);
+      return;
+    }
+
+    u_int8_t authencity = 0;
+    if (!checkSignature(messageBuffer, MessageSource::SERVER_ORVD,
+                        authencity)) {
+      logEntry("Failed to check signature from ORVD", ENTITY_NAME,
+               LogLevel::LOG_WARNING);
+      return;
+    }
+    if (!authencity) {
+      logEntry("Failed to check authencity from ORVD", ENTITY_NAME,
+               LogLevel::LOG_WARNING);
+      return;
+    }
+
+    snprintf(logBuffer, sizeof(logBuffer), "Received message from ORVD %s",
+             messageBuffer);
+    logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_INFO);
+
+    snprintf(cmpBuffer, sizeof(cmpBuffer), "$TRUE %s#", tagResult);
+    if (strstr(cmpBuffer, messageBuffer) != nullptr) {
+      logEntry("TRYING TO SEND DELIVERE. NEED TO IMPLEMENT", ENTITY_NAME,
+               LogLevel::LOG_INFO);
+    }
+    snprintf(cmpBuffer, sizeof(cmpBuffer), "$FALSE %s#", tagResult);
+    if (strstr(cmpBuffer, messageBuffer) != nullptr) {
+      logEntry("False point detected. Stop recognition.", ENTITY_NAME,
+               LogLevel::LOG_INFO);
+    }
+    snprintf(cmpBuffer, sizeof(cmpBuffer), "$ACCEPTED %s#", tagResult);
+    if (strstr(cmpBuffer, messageBuffer) != nullptr) {
+      logEntry("Bonus point detected. Stop recognition.", ENTITY_NAME,
+               LogLevel::LOG_INFO);
+    }
+  }
+}
 int main(void) {
   char logBuffer[256] = {0};
   char signBuffer[257] = {0};
