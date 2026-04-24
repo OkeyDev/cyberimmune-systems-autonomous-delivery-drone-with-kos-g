@@ -22,7 +22,7 @@
 // Ожидание между обновлениями (в мс)
 #define UPDATE_DELAY 500
 // Расстояние (в м) при котором считается что дрон достиг необходимой точки
-#define REACH_DISTANCE 2
+#define REACH_DISTANCE 0.5
 
 #define MAX_ALTIDUTE 150
 #define MIN_ALTIDUTE 55

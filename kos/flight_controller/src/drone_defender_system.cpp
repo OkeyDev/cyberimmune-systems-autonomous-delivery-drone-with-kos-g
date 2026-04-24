@@ -1,19 +1,18 @@
 #include "../include/drone_defender_system.h"
 
-#include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
-#include <thread>
 #include <unistd.h>
 #include <vector>
 
 // Разниа расстояний между точкой и дроном за этот и предыдущий цикл
 // для определения неверного направления движения
-#define DISTANCE_INCORRECT_MOVEMENT -0.75f
+#define DISTANCE_INCORRECT_MOVEMENT -0.1f
 // Для крит задачи, максимальное количество попыток до killSwitch()
 #define WAYPOINT_CHANGE_MAXIMUM_RETRIES 9999
 // Максимально допустимая скорость (в см/с)
-#define MAX_SPEED 100
+#define MAX_SPEED 60
 #define MAX_ALTIDUTE 150
 #define MIN_ALTIDUTE 55
 
@@ -57,24 +56,49 @@ static double degToRad(double degree) { return degree * (M_PI / 180.0f); }
 static double radToDeg(double rad) { return rad * (180.0f / M_PI); }
 
 static double calcDistance(double lat1, double lon1, double lat2, double lon2) {
-  const double R = 6371000.0f;
+  const double R = 6371000.0; // Радиус Земли в метрах
+  const double DEG_TO_RAD = M_PI / 180.0;
 
-  auto lat1_rad = degToRad(lat1);
-  auto lat2_rad = degToRad(lat2);
-  auto d_lat = degToRad(lat2 - lat1);
-  auto d_lon = degToRad(lon2 - lon1);
+  // Перевод в радианы
+  double lat1_rad = lat1 * DEG_TO_RAD;
+  double lon1_rad = lon1 * DEG_TO_RAD;
+  double lat2_rad = lat2 * DEG_TO_RAD;
+  double lon2_rad = lon2 * DEG_TO_RAD;
 
-  auto a = std::pow(std::sin(d_lat / 2), 2) +
-           std::cos(lat1_rad) * std::cos(lat2_rad) *
-               std::pow(std::sin(d_lon / 2), 2);
+  // Разности координат в радианах
+  double dlat = lat2_rad - lat1_rad;
+  double dlon = lon2_rad - lon1_rad;
 
-  if (a > 1.0)
-    a = 1.0;
+  // Средняя широта для коррекции долготы
+  double lat_mid = (lat1_rad + lat2_rad) / 2.0;
 
-  auto c = 2 * std::asin(std::sqrt(std::min(a, 1.0)));
+  // Переводим разности в метры
+  double dx = dlon * R * cos(lat_mid); // смещение по долготе (восток-запад)
+  double dy = dlat * R;                // смещение по широте (север-юг)
 
-  return R * c;
+  // Евклидово расстояние
+  return sqrt(dx * dx + dy * dy);
 }
+// static double calcDistance(double lat1, double lon1, double lat2, double
+// lon2) {
+//   const double R = 6371000.0f;
+//
+//   auto lat1_rad = degToRad(lat1);
+//   auto lat2_rad = degToRad(lat2);
+//   auto d_lat = degToRad(lat2 - lat1);
+//   auto d_lon = degToRad(lon2 - lon1);
+//
+//   auto a = std::pow(std::sin(d_lat / 2), 2) +
+//            std::cos(lat1_rad) * std::cos(lat2_rad) *
+//                std::pow(std::sin(d_lon / 2), 2);
+//
+//   if (a > 1.0)
+//     a = 1.0;
+//   auto c = 2 * std::atan2(std::sqrt(a), std::sqrt(1 - a));
+//   // auto c = 2 * std::asin(std::sqrt(std::min(a, 1.0)));
+//
+//   return R * c;
+// }
 
 static double calcDistance(int32_t lat1, int32_t lon1, int32_t lat2,
                            int32_t lon2) {
@@ -196,15 +220,14 @@ void handleIncorrectMovement(Coordinates *drone) {
     return;
   }
 
-  double diff = currentDist - previousDistance;
+  double diff = previousDistance - currentDist;
   // Если значение положительное, значит дрон приближается
   // Отриццательное - быть беде
 
   char logBuffer[256];
-  snprintf(logBuffer, sizeof(logBuffer),
-           "Current distance difference to point %d is %f", targetWaypointIndex,
-           diff);
-  // logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_INFO);
+  snprintf(logBuffer, sizeof(logBuffer), "WP (%d): %f - %f = %f",
+           targetWaypointIndex, previousDistance, currentDist, diff);
+  logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_INFO);
   if (restart_count > WAYPOINT_CHANGE_MAXIMUM_RETRIES) {
     // setKillSwitch(0);
     logEntry("Critical count received. It's time to kill the drone",
@@ -230,6 +253,7 @@ void handleIncorrectMovement(Coordinates *drone) {
   } else {
     restart_count = 0;
   }
+  previousDistance = currentDist;
 }
 
 void setTargetAltitude(int32_t altitude) { targetAltidute = altitude; }
@@ -263,16 +287,13 @@ void setNextWaypoint(MissionCommand *commands, int count, int start = 0) {
 
   // Mission ended
   if (targetWaypoint == prevWaypoint) {
-    targetWaypointIndex = -1;
-    lastWaypoint = nullptr;
-    targetWaypoint = nullptr;
-    setTargetAltitude(0);
     isMissionEnded = true;
   } else {
     char logBuffer[256];
     snprintf(logBuffer, sizeof(logBuffer), "Waypoint changed from %d to %d",
              prevWaypointIndex, targetWaypointIndex);
     logEntry(logBuffer, globalEntryName, LogLevel::LOG_INFO);
+    previousDistance = 0;
   }
 }
 
@@ -337,9 +358,9 @@ void handleSpeedChange(Coordinates *drone) {
   if (currentSpeed > MAX_SPEED) {
     snprintf(logBuffer, 256,
              "Speed change detected. Current: %f cm/s. Target: %d cm/s",
-             currentSpeed, MAX_SPEED);
+             currentSpeed, MAX_SPEED * 80 / 100);
     logEntry(logBuffer, globalEntryName, LogLevel::LOG_WARNING);
-    changeSpeed(MAX_SPEED);
+    changeSpeed(MAX_SPEED * 80 / 100);
   }
 
   lastPosition.latitude = drone->latitude;
@@ -510,10 +531,16 @@ bool isMissionRunning(Coordinates *drone) {
     if (drone->altitude < ALTITUDE_EPSILON) {
       logEntry("Mission ended. Waiting for new one", ENTITY_NAME,
                LogLevel::LOG_INFO);
+      targetWaypointIndex = -1;
+      lastWaypoint = nullptr;
+      targetWaypoint = nullptr;
+      setTargetAltitude(0);
+
       isFlightStarted = false;
       isMissionEnded = false;
+      return false;
     }
-    return false;
+    return true;
   }
   if (isFlightStarted == true)
     return true;
@@ -568,27 +595,16 @@ void initDefenderSystem(char *id, char *entryName, bool isInspectorState) {
 }
 
 void updateDefenderSystem(Coordinates *drone) {
+
   if (isMissionRunning(drone)) {
     if (!disableWaypointUpdate) {
       updateCurrentWaypoint(drone);
     }
     handleIncorrectMovement(drone);
-    handleAltiduteChange(drone);
+    if (!isMissionEnded)
+      handleAltiduteChange(drone);
     handleSpeedChange(drone);
 
     handleCargoLock(drone);
-  }
-}
-
-void updateDefenderSystemLoop() {
-  while (true) {
-    int32_t latitude, longtitude, altitude;
-    if (!getCoords(latitude, longtitude, altitude)) {
-      logEntry("Failed to get GPS Coords", ENTITY_NAME, LogLevel::LOG_CRITICAL);
-    } else {
-      Coordinates drone(latitude, longtitude, altitude);
-      updateDefenderSystem(&drone);
-    }
-    std::this_thread::sleep_for(std::chrono::milliseconds(UPDATE_DELAY));
   }
 }
