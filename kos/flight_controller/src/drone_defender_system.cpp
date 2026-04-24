@@ -8,7 +8,9 @@
 #define ALTITUDE_EPSILON 10
 // Разниа расстояний между точкой и дроном за этот и предыдущий цикл
 // для определения неверного направления движения
-#define DISTANCE_INCORRENT_MOVEMENT -0.5f
+#define DISTANCE_INCORRECT_MOVEMENT -0.5f
+// Для крит задачи, максимальное количество попыток до killSwitch()
+#define WAYPOINT_CHANGE_MAXIMUM_RETRIES 6
 // Расстояние (в м) при котором считается что дрон достиг необходимой точки
 #define REACH_DISTANCE 0.75
 // Ожидание между обновлениями (в мс)
@@ -178,7 +180,7 @@ double computeBearing(Coordinates *from, Coordinates *to) {
 }
 
 double previousDistance = 0;
-
+int32_t restart_count = 0;
 void handleIncorrectMovement(Coordinates *drone) {
   MissionCommand *waypoint = getCurrentWaypoint();
 
@@ -206,8 +208,15 @@ void handleIncorrectMovement(Coordinates *drone) {
            "Current distance difference to point %d is %f", targetWaypointIndex,
            diff);
   // logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_INFO);
+  if (restart_count > WAYPOINT_CHANGE_MAXIMUM_RETRIES) {
+    setKillSwitch(0);
+    logEntry("Critical count received. It's time to kill the drone",
+             ENTITY_NAME, LogLevel::LOG_CRITICAL);
+    isMissionEnded = true;
+    return;
+  }
 
-  if (previousDistance - currentDist < DISTANCE_INCORRENT_MOVEMENT) {
+  if (previousDistance - currentDist < DISTANCE_INCORRECT_MOVEMENT) {
     char message[128];
 
     const CommandWaypoint content = waypoint->content.waypoint;
@@ -220,6 +229,8 @@ void handleIncorrectMovement(Coordinates *drone) {
     logEntry(message, globalEntryName, LogLevel::LOG_WARNING);
 
     changeWaypoint(content.latitude, content.longitude, content.altitude);
+  } else {
+    restart_count = 0;
   }
 }
 
