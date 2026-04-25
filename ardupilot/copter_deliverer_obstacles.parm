@@ -81,33 +81,33 @@ WPNAV_RADIUS 100
 #Types and data:
 #	0 - None
 #	1 - Altitude Change; D1 - alt in cm
-#	2 - Speed Change; D1 - speed in cm/small
+#	2 - Speed Change; D1 - speed in cm/s
 #	3 - Point Change; D1 - lat in deg * 10^7, D2 - lng in deg * 10^7, D3 - alt in cm
 #	4 - Cargo Drop
 #	5 - Critical Altitude Change; same as Altitude Change
 #	6 - Critical Speed Change; same as Speed Change
 #	7 - Critical Point Change; same as Point Change
 CyOb_O1_Type 1
-CyOb_O1_Lat 556471960
-CyOb_O1_Lng 375163524
-CyOb_O1_D1 300
+CyOb_O1_Lat 556472122
+CyOb_O1_Lng 375163143
+CyOb_O1_D1 350
 CyOb_O1_D2 0
 CyOb_O1_D3 0
 CyOb_O2_Type 2
-CyOb_O2_Lat 556471664
-CyOb_O2_Lng 375163428
+CyOb_O2_Lat 556471907
+CyOb_O2_Lng 375162856
 CyOb_O2_D1 100
 CyOb_O2_D2 0
 CyOb_O2_D3 0
 CyOb_O3_Type 7
-CyOb_O3_Lat 556472866
-CyOb_O3_Lng 375164834
-CyOb_O3_D1 556472292
-CyOb_O3_D2 375164067
+CyOb_O3_Lat 556473082
+CyOb_O3_Lng 375164325
+CyOb_O3_D1 556472508
+CyOb_O3_D2 375163559
 CyOb_O3_D3 100
 CyOb_O4_Type 4
-CyOb_O4_Lat 556472366
-CyOb_O4_Lng 375162571
+CyOb_O4_Lat 556471717
+CyOb_O4_Lng 375164097
 CyOb_O4_D1 0
 CyOb_O4_D2 0
 CyOb_O4_D3 0

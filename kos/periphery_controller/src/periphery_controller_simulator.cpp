@@ -110,8 +110,8 @@ uint16_t peripheryPort = 5767;
 float scanSquaredDistance = 0.25;
 float latScale = 0.011131884502145f;
 float lngScale = 0.011131884502145f;
-int32_t tagLats[TAG_NUM] = { 556472849, 556472867, 556472741, 556473298, 556472419, 556472445, 556472291, 556471932 };
-int32_t tagLngs[TAG_NUM] = { 375163815, 375164038, 375164069, 375163816, 375163240, 375163972, 375164863, 375164384 };
+int32_t tagLats[TAG_NUM] = { 556472525, 556472651, 556472633, 556472650, 556472094, 556472499, 556472940, 556472581 };
+int32_t tagLngs[TAG_NUM] = { 375164577, 375164546, 375164323, 375165342, 375164003, 375163845, 375163337, 375162858 };
 char tagPictures[TAG_NUM][9] = { "picture1", "picture2", "picture3", "picture4", "picture5", "picture6", "picture7", "picture8" };
 
 bool killSwitchEnabled;

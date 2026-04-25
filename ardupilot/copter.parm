@@ -81,7 +81,7 @@ WPNAV_RADIUS 100
 #Types and data:
 #	0 - None
 #	1 - Altitude Change; D1 - alt in cm
-#	2 - Speed Change; D1 - speed in cm/small
+#	2 - Speed Change; D1 - speed in cm/s
 #	3 - Point Change; D1 - lat in deg * 10^7, D2 - lng in deg * 10^7, D3 - alt in cm
 #	4 - Cargo Drop
 #	5 - Critical Altitude Change; same as Altitude Change

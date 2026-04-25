@@ -23,7 +23,7 @@ services:
       context: .
       dockerfile: ./Dockerfile
     container_name: arducopter_inspector
-    command: /home/user/ardupilot/sitl/arducopter -S --model + --speedup 1 --slave 0  --serial5=tcp:5775:wait --serial6=tcp:5776:wait --serial7=tcp:5777:wait --defaults copter.parm --sim-address=172.28.0.2 --home=55.6471502,37.5163809,0.00,307 -I1 --sysid 1
+    command: /home/user/ardupilot/sitl/arducopter -S --model + --speedup 1 --slave 0  --serial5=tcp:5775:wait --serial6=tcp:5776:wait --serial7=tcp:5777:wait --defaults copter.parm --sim-address=172.28.0.2 --home=55.6472042,37.5162538,0.00,127 -I1 --sysid 1
     working_dir: /home/user/ardupilot
     user: user
     restart: always
@@ -57,7 +57,7 @@ services:
       context: .
       dockerfile: ./Dockerfile
     container_name: arducopter_deliverer
-    command: /home/user/ardupilot/sitl/arducopter -S --model + --speedup 1 --slave 0  --serial5=tcp:5765:wait --serial6=tcp:5766:wait --serial7=tcp:5767:wait --defaults copter.parm --sim-address=172.28.0.12 --home=55.6471645,37.5164001,0.00,37 -I0 --sysid 2
+    command: /home/user/ardupilot/sitl/arducopter -S --model + --speedup 1 --slave 0  --serial5=tcp:5765:wait --serial6=tcp:5766:wait --serial7=tcp:5767:wait --defaults copter.parm --sim-address=172.28.0.12 --home=55.6472150,37.5162284,0.00,127 -I0 --sysid 2
     working_dir: /home/user/ardupilot
     user: user
     restart: always
