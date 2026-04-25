@@ -295,6 +295,7 @@ enum RecognitionStatus {
   REC_CHANGE_ALTUTIDE,
   REC_PUBLISH_TAG,
   REC_WAIT_FOR_TAG,
+  REC_SEND_TO_DELIVERER,
   REC_STOP,
   REC_STOPPED,
 };
@@ -414,13 +415,15 @@ void recognize(Coordinates *drone, MissionCommand *interestPoints, int count) {
     recStatus = REC_PUBLISH_TAG;
   }
 
+  char messageBuffer[2048];
+  char cmpBuffer[2048];
   if (recStatus == REC_PUBLISH_TAG) {
     char signature[257] = {0};
     char signatureBuffer[2048] = {0};
     char messageTopic[] = "api/tag/request";
 
     snprintf(signatureBuffer, sizeof(signatureBuffer),
-             "api/tag/request?id=%s&tag=%s", boardId, tagResult);
+             "/api/tag/request?id=%s&tag=%s", boardId, tagResult);
 
     if (!signMessage(signatureBuffer, signature, sizeof(signature))) {
       logEntry("Failed to sign message (recognition)", ENTITY_NAME,
@@ -428,9 +431,9 @@ void recognize(Coordinates *drone, MissionCommand *interestPoints, int count) {
       return;
     }
 
-    snprintf(tagResult, sizeof(tagResult), "tag=%s&sig=0x%s", tagResult,
+    snprintf(messageBuffer, sizeof(messageBuffer), "tag=%s&sig=0x%s", tagResult,
              signature);
-    if (!publishMessage("api/tag/request", tagResult)) {
+    if (!publishMessage("api/tag/request", messageBuffer)) {
       logEntry("Failed to publish message to api/tag/request", ENTITY_NAME,
                LogLevel::LOG_WARNING);
       return;
@@ -442,16 +445,14 @@ void recognize(Coordinates *drone, MissionCommand *interestPoints, int count) {
     recStatus = REC_WAIT_FOR_TAG;
   }
 
-  char messageBuffer[2048];
-  char cmpBuffer[2048];
   if (recStatus == REC_WAIT_FOR_TAG) {
-    if (!receiveSubscription("api/tag/respone", messageBuffer,
+    if (!receiveSubscription("api/tag/response", messageBuffer,
                              sizeof(messageBuffer))) {
       logEntry("Failed to receive subscription", ENTITY_NAME,
                LogLevel::LOG_WARNING);
       return;
     }
-    if (!strcmp(messageBuffer, "")) {
+    if (strcmp(messageBuffer, "") == 0) {
       logEntry("Empty answer from ORVD. Waiting", ENTITY_NAME,
                LogLevel::LOG_INFO);
       return;
@@ -470,24 +471,25 @@ void recognize(Coordinates *drone, MissionCommand *interestPoints, int count) {
       return;
     }
 
-    snprintf(logBuffer, sizeof(logBuffer), "Received message from ORVD %s",
+    snprintf(logBuffer, sizeof(logBuffer), "Received message from ORVD: %s",
              messageBuffer);
     logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_INFO);
 
     snprintf(cmpBuffer, sizeof(cmpBuffer), "$TRUE %s#", tagResult);
-    if (strstr(cmpBuffer, messageBuffer) != nullptr) {
+    if (strstr(messageBuffer, cmpBuffer) != nullptr) {
+      recStatus = REC_STOP;
       logEntry("TRYING TO SEND DELIVERE. NEED TO IMPLEMENT", ENTITY_NAME,
                LogLevel::LOG_INFO);
     }
     snprintf(cmpBuffer, sizeof(cmpBuffer), "$FALSE %s#", tagResult);
-    if (strstr(cmpBuffer, messageBuffer) != nullptr) {
-      logEntry("False point detected. Stop recognition.", ENTITY_NAME,
-               LogLevel::LOG_INFO);
+    if (strstr(messageBuffer, cmpBuffer) != nullptr) {
+      logEntry("False point detected.", ENTITY_NAME, LogLevel::LOG_INFO);
+      recStatus = REC_STOP;
     }
     snprintf(cmpBuffer, sizeof(cmpBuffer), "$ACCEPTED %s#", tagResult);
-    if (strstr(cmpBuffer, messageBuffer) != nullptr) {
-      logEntry("Bonus point detected. Stop recognition.", ENTITY_NAME,
-               LogLevel::LOG_INFO);
+    if (strstr(messageBuffer, cmpBuffer) != nullptr) {
+      logEntry("Bonus point detected.", ENTITY_NAME, LogLevel::LOG_INFO);
+      recStatus = REC_STOP;
     }
   }
 }
