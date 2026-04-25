@@ -71,9 +71,10 @@ class VLLMRecognizer(BaseRecognizer):
                     pass
                 
             if not results:
-                logger.warning(f"Unexpected JSON format from model: {content}")
+                if not isinstance(results, list):
+                    logger.warning(f"Unexpected JSON format from model: {content}")
                 return RecognitionResult(tag="NONE", rec_alt="NONE")
-            
+
             if len(results) == 1:
                 return RecognitionResult(tag=results[0], rec_alt="NONE")
             else:

@@ -11,6 +11,11 @@ class StubRecognizer(BaseRecognizer):
     - image=picture1 -> RecognitionResult(tag="A1", rec_alt="NONE")
     - image=picture2 -> RecognitionResult(tag="A2", rec_alt="NONE")
     - image=picture3 -> RecognitionResult(tag="A3", rec_alt="NONE")
+    - image=picture4 -> RecognitionResult(tag="E1", rec_alt="NONE")
+    - image=picture5 -> RecognitionResult(tag="E2", rec_alt="NONE")
+    - image=picture6 -> RecognitionResult(tag="E3", rec_alt="NONE")
+    - image=picture7 -> RecognitionResult(tag="E4", rec_alt="NONE")
+    - image=picture8 -> RecognitionResult(tag="E5", rec_alt="NONE")
     - All other inputs -> RecognitionResult(tag="NONE", rec_alt="NONE")
     """
 
@@ -19,6 +24,11 @@ class StubRecognizer(BaseRecognizer):
         "picture1": ("A1", "NONE"),
         "picture2": ("A2", "NONE"),
         "picture3": ("A3", "NONE"),
+        "picture4": ("E1", "NONE"),
+        "picture5": ("E2", "NONE"),
+        "picture6": ("E3", "NONE"),
+        "picture7": ("E4", "NONE"),
+        "picture8": ("E5", "NONE"),
     }
 
     async def recognize(self, image_base64: str) -> RecognitionResult:
