@@ -1,6 +1,5 @@
-
 services:
-#################################################
+  #################################################
   kos_inspector:
     image: simulator
     build:
@@ -10,12 +9,14 @@ services:
     command: /home/user/kos/cross-build.sh --target sim --mode offline --role inspector --simulator-ip 172.28.0.2
     working_dir: /home/user/kos
     user: user
+    volumes:
+      - ./kos:/home/user/kos
     depends_on:
       - arducopter_inspector
     networks:
       cyberimmune:
         ipv4_address: 172.28.0.1
-#################################################
+  #################################################
   arducopter_inspector:
     image: simulator
     build:
@@ -32,7 +33,7 @@ services:
     networks:
       cyberimmune:
         ipv4_address: 172.28.0.2
-#################################################
+  #################################################
   kos_deliverer:
     image: simulator
     build:
@@ -42,12 +43,14 @@ services:
     command: /home/user/kos/cross-build.sh --target sim --mode offline --role deliverer --simulator-ip 172.28.0.12
     working_dir: /home/user/kos
     user: user
+    volumes:
+      - ./kos:/home/user/kos
     depends_on:
       - arducopter_deliverer
     networks:
       cyberimmune:
         ipv4_address: 172.28.0.11
-#################################################
+  #################################################
   arducopter_deliverer:
     image: simulator
     build:
@@ -64,7 +67,7 @@ services:
     networks:
       cyberimmune:
         ipv4_address: 172.28.0.12
-#################################################
+  #################################################
   mavproxy:
     image: simulator
     build:

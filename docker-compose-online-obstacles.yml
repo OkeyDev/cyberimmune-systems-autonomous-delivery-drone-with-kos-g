@@ -1,6 +1,5 @@
-
 services:
-#################################################
+  #################################################
   kos_inspector:
     image: simulator
     build:
@@ -10,12 +9,15 @@ services:
     command: /home/user/kos/cross-build.sh --target sim --mode online --role inspector --simulator-ip 172.28.0.2 --server-ip 172.28.0.4 --mqtt-ip 172.28.0.5 --mqtt-username inspector --mqtt-password secret
     working_dir: /home/user/kos
     user: user
+    volumes:
+      - ./kos:/home/user/kos
+
     depends_on:
       - arducopter_inspector
     networks:
       cyberimmune:
         ipv4_address: 172.28.0.1
-#################################################
+  #################################################
   arducopter_inspector:
     image: simulator
     build:
@@ -32,7 +34,7 @@ services:
     networks:
       cyberimmune:
         ipv4_address: 172.28.0.2
-#################################################
+  #################################################
   kos_deliverer:
     image: simulator
     build:
@@ -42,12 +44,14 @@ services:
     command: /home/user/kos/cross-build.sh --target sim --mode online --role deliverer --simulator-ip 172.28.0.12 --server-ip 172.28.0.4 --mqtt-ip 172.28.0.5 --mqtt-username deliverer --mqtt-password secret
     working_dir: /home/user/kos
     user: user
+    volumes:
+      - ./kos:/home/user/kos
     depends_on:
       - arducopter_deliverer
     networks:
       cyberimmune:
         ipv4_address: 172.28.0.11
-#################################################
+  #################################################
   arducopter_deliverer:
     image: simulator
     build:
@@ -64,7 +68,7 @@ services:
     networks:
       cyberimmune:
         ipv4_address: 172.28.0.12
-#################################################
+  #################################################
   mavproxy:
     image: simulator
     build:
@@ -81,7 +85,7 @@ services:
     networks:
       cyberimmune:
         ipv4_address: 172.28.0.3
-#################################################
+  #################################################
   orvd:
     image: orvd
     build:
@@ -102,7 +106,7 @@ services:
         ipv4_address: 172.28.0.4
     ports:
       - "8080:8080"
-#################################################
+  #################################################
   recognizer:
     image: recognizer
     build:
@@ -126,7 +130,7 @@ services:
     networks:
       cyberimmune:
         ipv4_address: 172.28.0.6
-#################################################
+  #################################################
   mqtt-server:
     image: mqtt-server
     build:
