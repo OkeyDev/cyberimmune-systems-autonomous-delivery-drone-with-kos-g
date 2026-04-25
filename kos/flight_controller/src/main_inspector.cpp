@@ -14,11 +14,14 @@
 #include <sys/types.h>
 #include <thread>
 #include <unistd.h>
+#include <vector>
 
 /** \cond */
 #define RETRY_DELAY_SEC 1
 #define RETRY_REQUEST_DELAY_SEC 5
 #define FLY_ACCEPT_PERIOD_US 500000
+#define RECOGNITION_ZONE 2
+#define RECOGNITION_MAX_RETRY 4
 
 char boardId[32] = {0};
 uint32_t sessionDelay;
@@ -277,7 +280,7 @@ MissionCommand *getInterestWaypoint(Coordinates *drone,
   MissionCommand *current = nullptr;
   for (int i = 0; i < count; i++) {
     if (isWaypointReached(drone, interestPoints[i].content.waypoint,
-                          REACH_DISTANCE)) {
+                          RECOGNITION_ZONE)) {
       current = interestPoints + count;
       break;
     }
@@ -296,9 +299,10 @@ enum RecognitionStatus {
   REC_STOPPED,
 };
 
-RecognitionStatus recStatus;
-char tagResult[4096];
-int32_t altitude;
+RecognitionStatus recStatus = REC_WAIT_POSITION;
+char tagResult[4096] = {0};
+int32_t altitude = 0;
+int retries = 0;
 
 void recognize(Coordinates *drone, MissionCommand *interestPoints, int count) {
   /* Tag Recognition */
@@ -333,17 +337,19 @@ void recognize(Coordinates *drone, MissionCommand *interestPoints, int count) {
              LogLevel::LOG_WARNING);
 
     recStatus = REC_WAIT_POSITION;
-    retrunTargetWaypointBack();
+    // retrunTargetWaypointBack();
     return;
   } else if (current != nullptr && recStatus == REC_WAIT_POSITION) {
     logEntry("Found interest waypoint. Setting force move to it.", ENTITY_NAME,
              LogLevel::LOG_INFO);
-    forceSetTargetWaypoint(current);
+    // TODO: Чтобы провести эксперемент с блокировкой перемещений
+    // forceSetTargetWaypoint(current);
     recStatus = REC_SEND_REQUEST;
   } else if (current == nullptr)
     return;
+
   if (recStatus == REC_STOP) {
-    retrunTargetWaypointBack();
+    // retrunTargetWaypointBack();
     recStatus = REC_STOPPED;
     return;
   }
@@ -368,22 +374,35 @@ void recognize(Coordinates *drone, MissionCommand *interestPoints, int count) {
 
       return;
     }
+    logEntry("Recognition request sent", ENTITY_NAME, LogLevel::LOG_INFO);
     recStatus = REC_WAIT_FOR_RESPONSE;
   }
 
   if (recStatus == REC_WAIT_FOR_RESPONSE) {
-    if (!getRecognitionResponse(logBuffer, altitude)) {
+    if (!getRecognitionResponse(tagResult, altitude)) {
       logEntry("Failed to get recognition response", ENTITY_NAME,
                LogLevel::LOG_WARNING);
       return;
     }
-    if (!strcmp(tagResult, "")) {
+    snprintf(logBuffer, sizeof(logBuffer), "Response from tag %s", tagResult);
+    logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_INFO);
+    if (strcmp(tagResult, "") == 0) {
       logEntry("No response from server. Waiting", ENTITY_NAME,
                LogLevel::LOG_INFO);
       return;
     }
 
     if (strstr(tagResult, "NONE") != nullptr) {
+      if (retries > RECOGNITION_MAX_RETRY) {
+        snprintf(logBuffer, sizeof(logBuffer),
+                 "Can't read image after %d retries. Stop reading",
+                 RECOGNITION_MAX_RETRY);
+        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_WARNING);
+        retries = 0;
+        recStatus = REC_STOP;
+        return;
+      }
+      retries += 1;
       altitude = altitude * 100;
       auto alt = altitude;
       if (altitude >= MAX_ALTIDUTE)
@@ -482,6 +501,7 @@ void recognize(Coordinates *drone, MissionCommand *interestPoints, int count) {
     }
   }
 }
+
 int main(void) {
   char logBuffer[256] = {0};
   char signBuffer[257] = {0};
@@ -682,19 +702,28 @@ int main(void) {
   // Send message "{Message}#{Signature}" to the topic "api/dm/{PARTNER_ID}"
   // with 'publishMessage'.
 
-  initDefenderSystem(boardId, ENTITY_NAME, true);
+  setLogEntryName(ENTITY_NAME);
 
+  int32_t count;
+  auto commands = getMissionCommands(count);
+  std::vector<MissionCommand> pointInterests;
+
+  for (int i = 0; i < count; i++) {
+    if (commands[i].type == CommandType::INTEREST)
+      pointInterests.push_back(commands[i]);
+  }
+  int32_t latitude, longtitude, altitude;
   while (true) {
     // :(
     // rip 22.04.2026
     // updateCurrentWaypointMQTT();
 
-    int32_t latitude, longtitude, altitude;
-    int result = getCoords(latitude, longtitude, altitude);
-
-    if (result) {
+    if (getCoords(latitude, longtitude, altitude)) {
       Coordinates coords(latitude, longtitude, altitude);
-      updateDefenderSystem(&coords);
+      int isMissionStarted = updateDefenderSystem(&coords);
+      if (isMissionStarted) {
+        recognize(&coords, pointInterests.data(), pointInterests.size());
+      }
     } else {
       logEntry("Error while reading geoCoords", ENTITY_NAME,
                LogLevel::LOG_WARNING);

@@ -16,10 +16,6 @@
 #define MAX_ALTIDUTE 150
 #define MIN_ALTIDUTE 55
 
-// in m (or not?)
-// Радиус вокруг точки для запуска разблокировки грузчика
-#define CARGOLOCK_ENABLE_DISTANCE 1
-
 // in seconds
 #define WAIT_FOR_RECOGNITION_DONE 1
 
@@ -32,6 +28,7 @@ bool ended = false;
 int32_t targetAltidute = 0;
 bool isDroneInspector = false;
 bool disableWaypointUpdate = false;
+bool changedAltitudeOnCurrentMission = false;
 
 std::vector<MissionCommand *> targetInterestWaypoints = {};
 
@@ -49,6 +46,8 @@ char *boardDroneId = nullptr;
 #ifndef ENTITY_NAME
 #define ENTITY_NAME ""
 #endif
+
+void setLogEntryName(char *logEntryName) { globalEntryName = logEntryName; }
 
 static double degToRad(int32_t degree) { return (double)degree / 10000000.0f; }
 static double degToRad(double degree) { return degree * (M_PI / 180.0f); }
@@ -202,6 +201,7 @@ double computeBearing(Coordinates *from, Coordinates *to) {
 
 double previousDistance = 0;
 int32_t restart_count = 0;
+double fixingCurrentPosition = false;
 void handleIncorrectMovement(Coordinates *drone) {
   MissionCommand *waypoint = getCurrentWaypoint();
 
@@ -209,8 +209,8 @@ void handleIncorrectMovement(Coordinates *drone) {
   if (waypoint == nullptr)
     return;
 
-  if (isWaypointReached(drone, waypoint->content.waypoint, REACH_DISTANCE))
-    return;
+  // if (isWaypointReached(drone, waypoint->content.waypoint, REACH_DISTANCE))
+  //   return;
 
   double currentDist = calcDistance(drone->latitude, drone->longtitude,
                                     waypoint->content.waypoint.latitude,
@@ -227,6 +227,7 @@ void handleIncorrectMovement(Coordinates *drone) {
   char logBuffer[256];
   snprintf(logBuffer, sizeof(logBuffer), "WP (%d): %f - %f = %f",
            targetWaypointIndex, previousDistance, currentDist, diff);
+  // TODO: log
   logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_INFO);
   if (restart_count > WAYPOINT_CHANGE_MAXIMUM_RETRIES) {
     // setKillSwitch(0);
@@ -248,8 +249,11 @@ void handleIncorrectMovement(Coordinates *drone) {
 
     logEntry(message, globalEntryName, LogLevel::LOG_WARNING);
 
-    changeWaypoint(content.latitude, content.longitude, content.altitude);
+    if (restart_count == 0) {
+      changeWaypoint(content.latitude, content.longitude, content.altitude);
+    }
     restart_count += 1;
+
   } else {
     restart_count = 0;
   }
@@ -262,12 +266,18 @@ MissionCommand *previousCommand = nullptr;
 void forceSetTargetWaypoint(MissionCommand *command) {
   previousCommand = targetWaypoint;
   disableWaypointUpdate = true;
+  // abortMission();
+  logEntry("Mission aborted. Waiting for actions", ENTITY_NAME,
+           LogLevel::LOG_INFO);
 }
 
 void retrunTargetWaypointBack() {
   targetWaypoint = previousCommand;
   disableWaypointUpdate = false;
+  // resumeFlight();
 }
+
+void onWaypointUpdate() { changedAltitudeOnCurrentMission = false; }
 
 void setNextWaypoint(MissionCommand *commands, int count, int start = 0) {
   auto prevWaypoint = targetWaypoint;
@@ -288,12 +298,14 @@ void setNextWaypoint(MissionCommand *commands, int count, int start = 0) {
   // Mission ended
   if (targetWaypoint == prevWaypoint) {
     isMissionEnded = true;
+    onWaypointUpdate();
   } else {
     char logBuffer[256];
     snprintf(logBuffer, sizeof(logBuffer), "Waypoint changed from %d to %d",
              prevWaypointIndex, targetWaypointIndex);
     logEntry(logBuffer, globalEntryName, LogLevel::LOG_INFO);
     previousDistance = 0;
+    onWaypointUpdate();
   }
 }
 
@@ -329,13 +341,16 @@ void handleAltiduteChange(Coordinates *drone) {
   char logBuffer[256];
   // snprintf(logBuffer, 256, "req: %d; current: %d;", targetAltidute,
   // altitude);
-  if (std::abs(targetAltidute - drone->altitude) > ALTITUDE_EPSILON) {
-    snprintf(
-        logBuffer, 256,
-        "Detecsted altitude change. Altitude change detected to %d. Target: %d",
-        drone->altitude, targetAltidute);
+  if (std::abs(targetAltidute - drone->altitude) > MAX_ALTITUDE_CHANGE) {
+    snprintf(logBuffer, 256,
+             "Detected altitude change. Altitude change detected to %d. "
+             "Target: %d. Changed: %d",
+             drone->altitude, targetAltidute, changedAltitudeOnCurrentMission);
     logEntry(logBuffer, globalEntryName, LogLevel::LOG_WARNING);
-    changeAltitude(targetAltidute);
+    if (!changedAltitudeOnCurrentMission) {
+      changeAltitude(targetAltidute);
+      changedAltitudeOnCurrentMission = true;
+    }
   }
 }
 
@@ -373,51 +388,6 @@ void handleSpeedChange(Coordinates *drone) {
 // updateCurrentWaypoint(): if (isWaypointReached(CURRENT_WAYPOINT))
 // setNextWaypoint() recognitionSystem(): if (isWaypointReached(ROI_WAYPIOINT))
 // {сделать снимок}
-
-bool cargoZoneReached = true;
-void handleCargoLock(Coordinates *drone) {
-  int32_t count = 0;
-  auto commands = getMissionCommands(count);
-
-  MissionCommand *current = nullptr;
-  for (int i = 0; i < count; i++) {
-    MissionCommand *command = commands + i;
-
-    // Меньше трех метров
-    if (command->type == CommandType::INTEREST &&
-        calcDistance(command->content.waypoint.latitude,
-                     command->content.waypoint.longitude, drone->latitude,
-                     drone->longtitude) < CARGOLOCK_ENABLE_DISTANCE) {
-      current = command;
-      break;
-    }
-  }
-
-  // Два переходных состояния
-  // Если нет точки сброса рядом, но она была
-  if (current == nullptr && cargoZoneReached) {
-    logEntry("Cargo lock set to 0. You can't drop your cargo", globalEntryName,
-             LogLevel::LOG_WARNING);
-
-    if (!setCargoLock(0)) {
-      logEntry("Failed to set cargo Lock to 0", globalEntryName,
-               LogLevel::LOG_ERROR);
-    } else {
-      cargoZoneReached = false;
-    }
-    // Если точка сброса есть, но её не было
-  } else if (current != nullptr && !cargoZoneReached) {
-    logEntry("You are inside drop zone. Cargo lock set to 1", globalEntryName,
-             LogLevel::LOG_WARNING);
-
-    if (!setCargoLock(1)) {
-      logEntry("Failed to set cargo Lock to 1", globalEntryName,
-               LogLevel::LOG_ERROR);
-    } else {
-      cargoZoneReached = true;
-    }
-  }
-}
 
 void receiveInterestPoints() {
   char messageTopic[256] = {0};
@@ -528,6 +498,7 @@ void handleRecognitionResponse(Coordinates *drone) {
 bool isMissionRunning(Coordinates *drone) {
   // Waiting for drone to land
   if (isMissionEnded) {
+    // Ждем пока дрон приземлится
     if (drone->altitude < ALTITUDE_EPSILON) {
       logEntry("Mission ended. Waiting for new one", ENTITY_NAME,
                LogLevel::LOG_INFO);
@@ -594,8 +565,7 @@ void initDefenderSystem(char *id, char *entryName, bool isInspectorState) {
   }
 }
 
-void updateDefenderSystem(Coordinates *drone) {
-
+bool updateDefenderSystem(Coordinates *drone) {
   if (isMissionRunning(drone)) {
     if (!disableWaypointUpdate) {
       updateCurrentWaypoint(drone);
@@ -604,7 +574,7 @@ void updateDefenderSystem(Coordinates *drone) {
     if (!isMissionEnded)
       handleAltiduteChange(drone);
     handleSpeedChange(drone);
-
-    handleCargoLock(drone);
+    return 1;
   }
+  return 0;
 }

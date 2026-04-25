@@ -19,6 +19,8 @@
 
 // Погресть в cm при определении высоты
 #define ALTITUDE_EPSILON 10
+// порог (в см), с которого будем определять изменение миссии
+#define MAX_ALTITUDE_CHANGE 20
 // Ожидание между обновлениями (в мс)
 #define UPDATE_DELAY 500
 // Расстояние (в м) при котором считается что дрон достиг необходимой точки
@@ -43,8 +45,7 @@ bool isWaypointReached(Coordinates *drone, CommandWaypoint waypoint,
 
 void setLogEntryName(char *logEntryName);
 
-void updateDefenderSystem(Coordinates *drone);
-void updateDefenderSystemLoop();
+bool updateDefenderSystem(Coordinates *drone);
 
 void setTargetAltitude(int32_t altitude);
 void forceSetTargetWaypoint(MissionCommand *command);
