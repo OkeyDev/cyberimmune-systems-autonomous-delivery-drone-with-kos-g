@@ -394,7 +394,7 @@ int main(void) {
 
   // Copter need to be registered at ORVD
   // receiveInspectorMessage();
-  createCustomMission();
+  // createCustomMission();
 
   // The drone is ready to arm
   logEntry("Ready to arm", ENTITY_NAME, LogLevel::LOG_INFO);

@@ -20,7 +20,7 @@
 #define RETRY_DELAY_SEC 1
 #define RETRY_REQUEST_DELAY_SEC 5
 #define FLY_ACCEPT_PERIOD_US 500000
-#define RECOGNITION_ZONE 2
+#define RECOGNITION_ZONE 1
 #define RECOGNITION_MAX_RETRY 4
 
 char boardId[32] = {0};
@@ -393,16 +393,6 @@ void recognize(Coordinates *drone, MissionCommand *interestPoints, int count) {
     }
 
     if (strstr(tagResult, "NONE") != nullptr) {
-      if (retries > RECOGNITION_MAX_RETRY) {
-        snprintf(logBuffer, sizeof(logBuffer),
-                 "Can't read image after %d retries. Stop reading",
-                 RECOGNITION_MAX_RETRY);
-        logEntry(logBuffer, ENTITY_NAME, LogLevel::LOG_WARNING);
-        retries = 0;
-        recStatus = REC_STOP;
-        return;
-      }
-      retries += 1;
       altitude = altitude * 100;
       auto alt = altitude;
       if (altitude >= MAX_ALTIDUTE)

@@ -28,7 +28,7 @@ bool ended = false;
 int32_t targetAltidute = 0;
 bool isDroneInspector = false;
 bool disableWaypointUpdate = false;
-bool changedAltitudeOnCurrentMission = false;
+bool changingAltitude = false;
 
 std::vector<MissionCommand *> targetInterestWaypoints = {};
 
@@ -277,7 +277,7 @@ void retrunTargetWaypointBack() {
   // resumeFlight();
 }
 
-void onWaypointUpdate() { changedAltitudeOnCurrentMission = false; }
+void onWaypointUpdate() {}
 
 void setNextWaypoint(MissionCommand *commands, int count, int start = 0) {
   auto prevWaypoint = targetWaypoint;
@@ -345,12 +345,14 @@ void handleAltiduteChange(Coordinates *drone) {
     snprintf(logBuffer, 256,
              "Detected altitude change. Altitude change detected to %d. "
              "Target: %d. Changed: %d",
-             drone->altitude, targetAltidute, changedAltitudeOnCurrentMission);
+             drone->altitude, targetAltidute, changingAltitude);
     logEntry(logBuffer, globalEntryName, LogLevel::LOG_WARNING);
-    if (!changedAltitudeOnCurrentMission) {
+    if (!changingAltitude) {
       changeAltitude(targetAltidute);
-      changedAltitudeOnCurrentMission = true;
+      changingAltitude = true;
     }
+  } else {
+    changingAltitude = false;
   }
 }
 
