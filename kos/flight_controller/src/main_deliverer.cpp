@@ -234,31 +234,105 @@ int askForMissionApproval(char *mission, int &result) {
   return 1;
 }
 
+int missionIndex = 0;
+void writeWaypoint(MissionCommand* command, int latitude, int longitude, int altitude) 
+{
+  (command + missionIndex)->type = CommandType::WAYPOINT;
+  (command + missionIndex)->content.waypoint.latitude = latitude;
+  (command + missionIndex)->content.waypoint.longitude = longitude;
+  (command + missionIndex)->content.waypoint.altitude = altitude;
+
+  missionIndex++;
+}
+
+void writeLand(MissionCommand* command) 
+{
+  (command + missionIndex)->type = CommandType::LAND;
+
+  missionIndex++;
+}
+
+void writeDelay(MissionCommand* command, int delay) 
+{
+  (command + missionIndex)->type = CommandType::DELAY;
+  (command + missionIndex)->content.delay.delay = delay;
+
+  missionIndex++;
+} 
+
+void writeTakeoff(MissionCommand* command, int altitude) 
+{
+  (command + missionIndex)->type = CommandType::TAKEOFF;
+  (command + missionIndex)->content.takeoff.altitude = altitude;
+
+  missionIndex++;
+}
+
+void writeHome(MissionCommand* command, int latitude, int longitude, int altitude) 
+{
+  (command + missionIndex)->type = CommandType::HOME;
+  (command + missionIndex)->content.waypoint.latitude = latitude;
+  (command + missionIndex)->content.waypoint.longitude = longitude;
+  (command + missionIndex)->content.waypoint.altitude = altitude;
+
+  missionIndex++;
+}
+
+void writeServo(MissionCommand* command, int servoId, int pwm) 
+{
+  (command + missionIndex)->type = CommandType::SET_SERVO;
+  (command + missionIndex)->content.servo.number = servoId;
+  (command + missionIndex)->content.servo.pwm = pwm;
+
+  missionIndex++;
+}
+
 void createCustomMission() {
-  int32_t missionCommandCount = 6;
+
+/*
+  QGC WPL 110
+0	1	0	16	0	0	0	0	55.6472150	37.5162284	0.000000	1
+1	0	3	22	0.00000000	0.00000000	0.00000000	0.00000000	0.00000000	0.00000000	1.500000	1
+2	0	3	16	0.00000000	0.00000000	0.00000000	0.00000000	55.64715020	37.51638090	1.500000	1
+3	0	3	16	0.00000000	0.00000000	0.00000000	0.00000000	55.64717170	37.51640970	1.500000	1
+4	0	3	16	0.00000000	0.00000000	0.00000000	0.00000000	55.64721220	37.51631430	1.500000	1
+5	0	3	16	0.00000000	0.00000000	0.00000000	0.00000000	55.64723740	37.51630800	1.500000	1
+6	0	3	16	0.00000000	0.00000000	0.00000000	0.00000000	55.64724550	37.51628900	1.500000	1
+7	0	3	16	0.00000000	0.00000000	0.00000000	0.00000000	55.64726700	37.51631770	1.500000	1
+8	0	3	16	0.00000000	0.00000000	0.00000000	0.00000000	55.64722920	37.51640670	1.500000	1
+9	0	3	16	0.00000000	0.00000000	0.00000000	0.00000000	55.64725070	37.51643550	1.500000	1
+10	0	3	16	0.00000000	0.00000000	0.00000000	0.00000000	55.64725790	37.51644500	1.500000	1
+11	0	3	93	3.00000000	0.00000000	0.00000000	0.00000000	0.00000000	0.00000000	0.000000	1
+12	0	3	183	5.00000000	1200.00000000	0.00000000	0.00000000	0.00000000	0.00000000	0.000000	1
+13	0	3	93	1.00000000	0.00000000	0.00000000	0.00000000	0.00000000	0.00000000	0.000000	1
+14	0	3	183	5.00000000	1800.00000000	0.00000000	0.00000000	0.00000000	0.00000000	0.000000	1
+15	0	3	16	0.00000000	0.00000000	0.00000000	0.00000000	55.64727050	37.51644190	1.500000	1
+16	0	3	16	0.00000000	0.00000000	0.00000000	0.00000000	55.64729200	37.51647060	1.500000	1
+17	0	3	16	0.00000000	0.00000000	0.00000000	0.00000000	55.64732980	37.51638160	1.500000	1
+18	0	3	21	0.00000000	0.00000000	0.00000000	0.00000000	0.00000000	0.00000000	0.000000	1
+  */
+  int32_t missionCommandCount = 19;
   MissionCommand *commands =
       (MissionCommand *)malloc(sizeof(MissionCommand) * missionCommandCount);
-  commands[0].type = CommandType::HOME;
-  commands[0].content.waypoint.latitude = 10.4233556;
-  commands[0].content.waypoint.longitude = 23.3435660;
-  commands[0].content.waypoint.altitude = 100;
-
-  commands[1].type = CommandType::TAKEOFF;
-  commands[1].content.takeoff.altitude = 100;
-
-  commands[2].type = CommandType::WAYPOINT;
-  commands[2].content.waypoint.latitude = 23.4553456;
-  commands[2].content.waypoint.longitude = 23.2345145;
-  commands[2].content.waypoint.altitude = 100;
-
-  commands[3].type = CommandType::WAYPOINT;
-  commands[3].content.waypoint.latitude = 30.4533999;
-  commands[3].content.waypoint.longitude = 30.2345145;
-  commands[3].content.waypoint.altitude = 100;
-
-  commands[4].type = CommandType::DELAY;
-  commands[4].content.delay.delay = 1;
-  commands[5].type = CommandType::LAND;
+  writeHome(commands, 5564721500, 3751622840, 0);
+  writeTakeoff(commands, 150);
+  writeWaypoint(commands, 5564715020, 3751638090, 150);
+  writeWaypoint(commands, 5564717170, 3751640970, 150);
+  writeWaypoint(commands, 5564721220, 3751631430, 150);
+  writeWaypoint(commands, 5564723740, 3751630800, 150);
+  writeWaypoint(commands, 5564724550, 3751628900, 150);
+  writeWaypoint(commands, 5564726700, 3751631770, 150);
+  writeWaypoint(commands, 5564722920, 3751640670, 150);
+  writeWaypoint(commands, 5564725070, 3751643550, 150);
+  writeWaypoint(commands, 5564725790, 3751644500, 150);
+  writeDelay(commands, 1);
+  writeServo(commands, 5, 1200);
+  writeDelay(commands, 1);
+  writeServo(commands, 5, 1800);
+  writeWaypoint(commands, 5564727050, 3751644190, 150);
+  writeWaypoint(commands, 5564729200, 3751647060, 150);
+  writeWaypoint(commands, 5564732980, 3751638160, 150);
+  writeLand(commands);
 
   char missionBuffer[4096] = {0};
   missionToString(commands, missionCommandCount, missionBuffer, 4096);

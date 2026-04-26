@@ -20,13 +20,13 @@
 // Погресть в cm при определении высоты
 #define ALTITUDE_EPSILON 10
 // порог (в см), с которого будем определять изменение миссии
-#define MAX_ALTITUDE_CHANGE 20
+#define MAX_ALTITUDE_CHANGE 10
 // Ожидание между обновлениями (в мс)
 #define UPDATE_DELAY 500
 // Расстояние (в м) при котором считается что дрон достиг необходимой точки
 #define REACH_DISTANCE 0.5
 
-#define MAX_ALTIDUTE 120
+#define MAX_ALTIDUTE 150
 #define MIN_ALTIDUTE 80
 
 class Coordinates {
