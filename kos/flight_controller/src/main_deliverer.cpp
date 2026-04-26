@@ -235,7 +235,7 @@ int askForMissionApproval(char *mission, int &result) {
 }
 
 int missionIndex = 0;
-void writeWaypoint(MissionCommand* command, int latitude, int longitude, int altitude) 
+void writeWaypoint(MissionCommand* command, int32_t latitude, int32_t longitude, int32_t altitude) 
 {
   (command + missionIndex)->type = CommandType::WAYPOINT;
   (command + missionIndex)->content.waypoint.latitude = latitude;
@@ -252,7 +252,7 @@ void writeLand(MissionCommand* command)
   missionIndex++;
 }
 
-void writeDelay(MissionCommand* command, int delay) 
+void writeDelay(MissionCommand* command, int32_t delay) 
 {
   (command + missionIndex)->type = CommandType::DELAY;
   (command + missionIndex)->content.delay.delay = delay;
@@ -260,7 +260,7 @@ void writeDelay(MissionCommand* command, int delay)
   missionIndex++;
 } 
 
-void writeTakeoff(MissionCommand* command, int altitude) 
+void writeTakeoff(MissionCommand* command, int32_t altitude) 
 {
   (command + missionIndex)->type = CommandType::TAKEOFF;
   (command + missionIndex)->content.takeoff.altitude = altitude;
@@ -268,7 +268,7 @@ void writeTakeoff(MissionCommand* command, int altitude)
   missionIndex++;
 }
 
-void writeHome(MissionCommand* command, int latitude, int longitude, int altitude) 
+void writeHome(MissionCommand* command, int32_t latitude, int32_t longitude, int32_t altitude) 
 {
   (command + missionIndex)->type = CommandType::HOME;
   (command + missionIndex)->content.waypoint.latitude = latitude;
@@ -278,7 +278,7 @@ void writeHome(MissionCommand* command, int latitude, int longitude, int altitud
   missionIndex++;
 }
 
-void writeServo(MissionCommand* command, int servoId, int pwm) 
+void writeServo(MissionCommand* command, int32_t servoId, int32_t pwm) 
 {
   (command + missionIndex)->type = CommandType::SET_SERVO;
   (command + missionIndex)->content.servo.number = servoId;
