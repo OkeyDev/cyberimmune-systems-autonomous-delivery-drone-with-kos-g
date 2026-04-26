@@ -393,7 +393,7 @@ int main(void) {
   // 'askForMissionApproval' function.
 
   // Copter need to be registered at ORVD
-  // receiveInspectorMessage();
+  receiveInspectorMessage();
   // createCustomMission();
 
   // The drone is ready to arm

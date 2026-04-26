@@ -26,8 +26,8 @@
 // Расстояние (в м) при котором считается что дрон достиг необходимой точки
 #define REACH_DISTANCE 0.5
 
-#define MAX_ALTIDUTE 150
-#define MIN_ALTIDUTE 55
+#define MAX_ALTIDUTE 120
+#define MIN_ALTIDUTE 80
 
 class Coordinates {
 public:

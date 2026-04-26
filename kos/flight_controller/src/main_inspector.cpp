@@ -22,6 +22,7 @@
 #define FLY_ACCEPT_PERIOD_US 500000
 #define RECOGNITION_ZONE 1
 #define RECOGNITION_MAX_RETRY 4
+#define RECOGNITION_GET_PICTURE_ZONE 0.5f
 
 char boardId[32] = {0};
 uint32_t sessionDelay;
@@ -232,12 +233,11 @@ int askForMissionApproval(char *mission, int &result) {
   return 1;
 }
 
-void forceSendMessage() {
-  char messageBuffer[512];
+void forceSendMessage(char *message) {
+  char messageBuffer[4096];
   char messageSign[257];
   char topicBuffer[128];
   char logBuffer[256];
-  char message[] = "HelloWorld";
 
   while (!signMessage(message, messageSign, sizeof(messageSign))) {
     snprintf(logBuffer, sizeof(logBuffer),
@@ -281,7 +281,7 @@ MissionCommand *getInterestWaypoint(Coordinates *drone,
   for (int i = 0; i < count; i++) {
     if (isWaypointReached(drone, interestPoints[i].content.waypoint,
                           RECOGNITION_ZONE)) {
-      current = interestPoints + count;
+      current = interestPoints + i;
       break;
     }
   }
@@ -291,6 +291,7 @@ MissionCommand *getInterestWaypoint(Coordinates *drone,
 enum RecognitionStatus {
   REC_WAIT_POSITION,
   REC_SEND_REQUEST,
+  REC_WAIT_SPEED,
   REC_WAIT_FOR_RESPONSE,
   REC_CHANGE_ALTUTIDE,
   REC_PUBLISH_TAG,
@@ -304,6 +305,7 @@ RecognitionStatus recStatus = REC_WAIT_POSITION;
 char tagResult[4096] = {0};
 int32_t altitude = 0;
 int retries = 0;
+std::vector<MissionCommand> delivererPoints;
 
 void recognize(Coordinates *drone, MissionCommand *interestPoints, int count) {
   /* Tag Recognition */
@@ -345,7 +347,7 @@ void recognize(Coordinates *drone, MissionCommand *interestPoints, int count) {
              LogLevel::LOG_INFO);
     // TODO: Чтобы провести эксперемент с блокировкой перемещений
     // forceSetTargetWaypoint(current);
-    recStatus = REC_SEND_REQUEST;
+    recStatus = REC_WAIT_SPEED;
   } else if (current == nullptr)
     return;
 
@@ -353,6 +355,16 @@ void recognize(Coordinates *drone, MissionCommand *interestPoints, int count) {
     // retrunTargetWaypointBack();
     recStatus = REC_STOPPED;
     return;
+  }
+
+  if (recStatus == REC_WAIT_SPEED) {
+    if (!isWaypointReached(drone, current->content.waypoint,
+                           RECOGNITION_GET_PICTURE_ZONE)) {
+      logEntry("Waiting for Target reach", ENTITY_NAME, LogLevel::LOG_INFO);
+      return;
+    }
+    logEntry("Mission point reached", ENTITY_NAME, LogLevel::LOG_INFO);
+    recStatus = REC_SEND_REQUEST;
   }
 
   char logBuffer[256] = {0};
@@ -478,7 +490,8 @@ void recognize(Coordinates *drone, MissionCommand *interestPoints, int count) {
     snprintf(cmpBuffer, sizeof(cmpBuffer), "$TRUE %s#", tagResult);
     if (strstr(messageBuffer, cmpBuffer) != nullptr) {
       recStatus = REC_STOP;
-      logEntry("TRYING TO SEND DELIVERE. NEED TO IMPLEMENT", ENTITY_NAME,
+      delivererPoints.push_back(*current);
+      logEntry("Adding accepted point to array", ENTITY_NAME,
                LogLevel::LOG_INFO);
     }
     snprintf(cmpBuffer, sizeof(cmpBuffer), "$FALSE %s#", tagResult);
@@ -492,6 +505,15 @@ void recognize(Coordinates *drone, MissionCommand *interestPoints, int count) {
       recStatus = REC_STOP;
     }
   }
+}
+
+void sendMessageToDeliverer() {
+  char buffer[2048] = {0};
+  missionToString(delivererPoints.data(), delivererPoints.size(), buffer,
+                  sizeof(buffer));
+  forceSendMessage(buffer);
+  logEntry("Points sent to Deliverer", ENTITY_NAME, LogLevel::LOG_INFO);
+  delivererPoints.clear();
 }
 
 int main(void) {
@@ -576,8 +598,6 @@ int main(void) {
              LogLevel::LOG_INFO);
     printMission();
   }
-
-  forceSendMessage();
 
   // The drone is ready to arm
   logEntry("Ready to arm", ENTITY_NAME, LogLevel::LOG_INFO);
@@ -715,6 +735,8 @@ int main(void) {
       int isMissionStarted = updateDefenderSystem(&coords);
       if (isMissionStarted) {
         recognize(&coords, pointInterests.data(), pointInterests.size());
+      } else if (!delivererPoints.empty()) {
+        sendMessageToDeliverer();
       }
     } else {
       logEntry("Error while reading geoCoords", ENTITY_NAME,
